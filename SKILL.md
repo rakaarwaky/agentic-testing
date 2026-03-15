@@ -1,59 +1,59 @@
 ---
 name: agentic-testing
-description: Autonomous Unit Testing Agent that analyzes, generates, runs, and self-heals tests.
+description: Autonomous Unit Testing Skill with AST-based healing and synthetic data generation.
 version: 1.0.0
+standard: AES-2026-Skill
 ---
 
 # Agentic Testing Skill 🧪
 
-This skill enables autonomous testing capabilities including AST analysis, recursive test execution, rule-based self-healing, and synthetic data generation. It is designed to be used by AI agents to maintain high-quality codebases with 100% test coverage.
+This skill equips you with autonomous testing capabilities. Use it to maintain a high-quality, 100% covered codebase without manual intervention.
 
-## Core Directives for Agents
-1. **Target 100% Coverage**: All new features must be accompanied by tests that achieve full coverage.
-2. **Autonomous Healing**: When a test fails, always use `test_run` with `max_retries > 0` to attempt automatic recovery.
-3. **Data Diversity**: Use `test_generate_data` to ensure logic is resilient against edge cases.
+## 🧭 Agentic Directives
 
-## Available Tools
+### 1. The 100% Coverage Gate
+Every piece of code in `src/` is a cost center unless verified. You MUST achieve 100% coverage for all "Living Stock" (reachable code).
+- **Tool**: Use `test_audit` to identify gaps.
+- **Action**: If coverage < 100%, generate missing tests immediately.
+
+### 2. Autonomous Healing Workflow
+Do not stop at the first failure. Follow the recovery loop:
+1. **Analyze**: Use `test_analyze` to understand why the code failed.
+2. **Heal**: Run `test_run` with `max_retries=3`. The heuristic healer handles `ImportError`, `AttributeError`, and `AssertionError`.
+3. **Verify**: Run `test_run` again with 0 retries to confirm the fix is permanent.
+
+### 3. Edge Case Synthesis
+Never rely solely on static fixtures. 
+- Use `test_generate_data` to stress-test your logic with emails, empty strings, and boundary numbers.
+
+## 🛠 Tool Protocols
 
 ### `test_analyze`
-Introspects a Python file to extract its semantic structure. Use this before writing tests to understand the available classes, functions, and their complexity.
-- **Param**: `target_file` (str) - Absolute path to the Python file.
+**When to use**: Before creating any test file or modifying existing logic.
+- **Agent Instruction**: Extract class and function signatures to ensure your `pytest` mocks are high-fidelity.
 
 ### `test_run`
-Executes tests for a specific path with optional autonomous self-healing.
-- **Param**: `test_path` (str) - Path to the test file or directory.
-- **Param**: `max_retries` (int, default=1) - Number of healing attempts to perform on failure.
-- **Healing Capabilities**:
-  - Fixes `ImportError` by adjusting `sys.path`.
-  - Fixes simple `AssertionError` by parsing error messages and updating code.
-  - Automatically retries execution after applying fixes.
-
-### `test_audit`
-Performs a quality and coverage check for a directory. Use this to verify that the 100% coverage gate is met.
-- **Param**: `target_dir` (str) - Absolute path to the source directory.
+**When to use**: After every code change.
+- **Agent Instruction**: Always prioritize `max_retries >= 1`. If the healer applies a patch, read the updated file to confirm it aligns with the architectural intent.
 
 ### `test_generate`
-Generates boilerplate unit tests for a given source file based on its AST analysis.
-- **Param**: `source_file` (str) - Absolute path to the component to be tested.
+**When to use**: When creating a new component.
+- **Agent Instruction**: Use this to scaffold the `tests/[feature]/unit/` directory. Refine the generated tests to improve semantic depth.
 
-### `test_generate_data`
-Generates diverse synthetic data for edge-case testing.
-- **Param**: `data_type` (str) - One of `strings`, `numbers`, `json`, `dates`, `emails`, or `all`.
+### `test_audit`
+**When to use**: Before finalize/submit.
+- **Agent Instruction**: This is your quality gate. Report any file that falls below 100% as a "Quality Breach".
 
-## Standard Test Patterns
+## 📐 Test Directory Standard (AES-2026)
 
-### Unit Testing (L1)
-Focus on pure logic with mocked infrastructure.
-- Location: `tests/[feature]/unit/`
-- Mocking: Mandatory for I/O and external services.
+Ensure your test structures follow the vertical slicing pattern:
+- `tests/[feature]/unit/`: Logic verification, mock-heavy.
+- `tests/[feature]/integration/`: Surface-to-Infrastructure verification.
+- `tests/fixtures/`: Shared state.
 
-### Integration Testing (L2)
-Verify interaction between components and real adapters.
-- Location: `tests/[feature]/integration/`
-- Mocking: External APIs only.
+## ⚠️ Self-Healing Constraints
+- **Supported**: Import path fixes, basic attribute remapping, and literal comparison adjustments in assertions.
+- **Unsupported**: Logic flow changes, complex library dependency installs, and type-system violations.
 
-### Self-Healing Loop
-1. Analyze code structure via `test_analyze`.
-2. Generate base tests via `test_generate`.
-3. Run with healing: `test_run(test_path="...", max_retries=3)`.
-4. Finalize with `test_audit` to ensure 100% coverage.
+> [!IMPORTANT]
+> When healing fails, do not loop indefinitely. Switch to `PLANNING` mode, analyze the failure log, and perform a manual "Vibe Check" with the Human Architect.
