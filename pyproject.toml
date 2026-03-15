@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-testing"
+version = "1.0.0"
+description = "MCP server for autonomous unit testing and self-healing"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]",
+    "fastmcp",
+    "pytest",
+    "pytest-asyncio",
+    "pydantic",
+]
+
+[project.scripts]
+agentic-testing = "src.surfaces.mcp.server:main"
+
+[tool.pyre]
+source_directories = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+python_classes = "Test* !TestResult"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pyre-check>=0.9.25",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.15.6",
+]
+
