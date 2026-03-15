@@ -28,10 +28,32 @@ def test_abstract_methods_raise_not_implemented():
         async def check_coverage(self, target_dir: str) -> dict:
             return await IQualityAuditor.check_coverage(self, target_dir)
 
+    from src.core._taxonomy.models import ITestGenerator, IFileSystem
+
+    class MockTestGenerator(ITestGenerator):
+        async def generate_test(self, source_file: str) -> str:
+            return await ITestGenerator.generate_test(self, source_file)
+
+    class MockFileSystem(IFileSystem):
+        def read_file(self, path: str) -> str:
+            return IFileSystem.read_file(self, path)
+        def write_file(self, path: str, content: str) -> None:
+            return IFileSystem.write_file(self, path, content)
+        def file_exists(self, path: str) -> bool:
+            return IFileSystem.file_exists(self, path)
+        def read_lines(self, path: str) -> list[str]:
+            return IFileSystem.read_lines(self, path)
+        def write_lines(self, path: str, lines: list[str]) -> None:
+            return IFileSystem.write_lines(self, path, lines)
+        def makedirs(self, path: str, exist_ok: bool = True) -> None:
+            return IFileSystem.makedirs(self, path, exist_ok)
+
     runner = MockRunner()
     healer = MockHealer()
     analyzer = MockAnalyzer()
     auditor = MockAuditor()
+    generator = MockTestGenerator()
+    fs = MockFileSystem()
 
     import asyncio
 
@@ -48,3 +70,25 @@ def test_abstract_methods_raise_not_implemented():
 
     with pytest.raises(NotImplementedError):
         asyncio.run(auditor.check_coverage("dir"))
+
+    with pytest.raises(NotImplementedError):
+        asyncio.run(generator.generate_test("test"))
+        
+    with pytest.raises(NotImplementedError):
+        fs.read_file("test")
+
+    with pytest.raises(NotImplementedError):
+        fs.write_file("test", "test")
+
+    with pytest.raises(NotImplementedError):
+        fs.file_exists("test")
+
+    with pytest.raises(NotImplementedError):
+        fs.read_lines("test")
+
+    with pytest.raises(NotImplementedError):
+        fs.write_lines("test", ["test"])
+
+    with pytest.raises(NotImplementedError):
+        fs.makedirs("test")
+

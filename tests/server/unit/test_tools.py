@@ -81,3 +81,14 @@ async def test_mcp_tools_execution():
 
         res_fail = await funcs["test_generate_data"](data_type="unknown")
         assert "Unknown data type" in res_fail
+        
+        # Test invalid data type via direct call
+        res_invalid = await funcs["test_generate_data"](data_type="invalid")
+        assert "Unknown data type" in res_invalid
+
+    if "test_generate" in funcs:
+        container.test_generator = AsyncMock()
+        container.test_generator.generate_test.return_value = "generated"
+        res = await funcs["test_generate"](source_file="test.py")
+        assert res == "generated"
+        container.test_generator.generate_test.assert_called_with("test.py")

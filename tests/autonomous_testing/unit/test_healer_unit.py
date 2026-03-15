@@ -1,7 +1,7 @@
 import pytest
 import os
 import tempfile
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from src.core.capabilities.autonomous_testing.healer import HeuristicHealer
 from src.core._taxonomy.models import TestResult, FailureMetadata
 from src.infrastructure.file_system import LocalFileSystem
@@ -362,3 +362,53 @@ async def test_healer_fix_assertion_read_exception():
         )
         healed = await healer.attempt_fix(result)
         assert healed is False
+
+
+        assert healed is False
+
+
+@pytest.mark.asyncio
+async def test_healer_assertion_no_regex_match():
+    healer = HeuristicHealer(LocalFileSystem())
+    # Failure with line number but message doesn't match assert regex
+    result = TestResult(
+        target="test.py",
+        passed=False,
+        output_log="",
+        error_type="AssertionError",
+        failure=FailureMetadata(file_path="test.py", line_number=1, message="No match")
+    )
+    healed = await healer.attempt_fix(result)
+    assert healed is False  # Hits line 93
+
+
+@pytest.mark.asyncio
+async def test_healer_assertion_exception_handling():
+    fs = MagicMock()
+    fs.read_lines.side_effect = Exception("error")
+    healer = HeuristicHealer(fs)
+    result = TestResult(
+        target="test.py",
+        passed=False,
+        output_log="AssertionError: assert 'a' == 'b'",
+        error_type="AssertionError",
+        failure=FailureMetadata(file_path="test.py", line_number=1, message="assert 'a' == 'b'")
+    )
+    healed = await healer.attempt_fix(result)
+    assert healed is False  # Hits line 125
+
+
+@pytest.mark.asyncio
+async def test_healer_legacy_assertion_exception_handling():
+    fs = MagicMock()
+    fs.read_lines.side_effect = Exception("error")
+    healer = HeuristicHealer(fs)
+    # No line number triggers legacy
+    result = TestResult(
+        target="test.py",
+        passed=False,
+        output_log="AssertionError: assert 'a' == 'b'",
+        error_type="AssertionError"
+    )
+    healed = await healer.attempt_fix(result)
+    assert healed is False  # Hits line 147/148
