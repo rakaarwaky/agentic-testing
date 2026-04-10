@@ -1,6 +1,7 @@
 import os
 import logging
 from ..._taxonomy.models import ITestGenerator, ICodeAnalyzer, IFileSystem
+import typing
 
 logger = logging.getLogger(__name__)
 
@@ -12,23 +13,24 @@ class AutogenerateTestUseCase(ITestGenerator):
         self.file_system = file_system
 
     async def generate_test(self, source_file: str) -> str:
-        analysis = await self.analyzer.analyze_file(source_file)
+        analysis: dict[str, typing.Any] = await self.analyzer.analyze_file(source_file)
         if "error" in analysis:
             logger.error(f"Failed to generate tests. Analyzer error: {analysis['error']}")
             return f"Error analyzing file: {analysis['error']}"
 
         base_name = os.path.basename(source_file).replace(".py", "")
-        module_path = source_file.replace("/", ".").strip(".")
-        # Handle cases where source_file starts with /
-        if source_file.startswith("/"):
-             # Try to find a relative path or just use the basename if complex
-             import_path = base_name 
-        else:
-             import_path = module_path.replace(".py", "")
 
         test_content = [
             "import pytest",
-            f"from {import_path} import *",
+            "import importlib.util",
+            "import sys",
+            "",
+            f"spec = importlib.util.spec_from_file_location('{base_name}', '{source_file}')",
+            "if spec and spec.loader:",
+            "    module = importlib.util.module_from_spec(spec)",
+            f"    sys.modules['{base_name}'] = module",
+            "    spec.loader.exec_module(module)",
+            f"from {base_name} import *",
             "",
             f"# Auto-generated tests for {source_file}",
             ""

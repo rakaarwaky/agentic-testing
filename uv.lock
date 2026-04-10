@@ -12,6 +12,7 @@ name = "agentic-testing"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "fastmcp" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
@@ -29,6 +30,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click" },
     { name = "fastmcp" },
     { name = "mcp", extras = ["cli"] },
     { name = "pydantic" },

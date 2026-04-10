@@ -14,11 +14,9 @@ class CoverageAuditor(IQualityAuditor):
             report_file = tmp.name
 
         try:
-            # Note: The command execution depends on Infrastructure (shell access)
-            # but the orchestration of coverage logic is a Capability.
-            # In a more strict AES, we might inject a ShellProvider here.
-            # Use uv run for better portability
-            cmd = f"uv run pytest --cov={target_dir} --cov-report=json:{report_file}"
+            # Use Python's sys.executable for better portability across environments
+            import sys
+            cmd = f"{sys.executable} -m pytest --cov={target_dir} --cov-report=json:{report_file}"
 
             proc = await asyncio.create_subprocess_shell(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE

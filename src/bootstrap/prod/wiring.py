@@ -8,7 +8,9 @@ from ...core.capabilities.synthetic_data.actions import SimpleDataGenerator
 from ...core.capabilities.autogenerate.actions import AutogenerateTestUseCase
 
 
-def wire_dependencies():
+import typing
+
+def wire_dependencies() -> dict[str, typing.Any]:
     """Level 3b: Production - Wiring specific infrastructure and capabilities."""
 
     # Infrastructure

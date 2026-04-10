@@ -13,10 +13,12 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "pydantic",
+    "click",
 ]
 
 [project.scripts]
 agentic-testing = "src.surfaces.mcp.server:main"
+agentic-test = "src.surfaces.cli.main:cli"
 
 [tool.pyre]
 source_directories = ["src"]

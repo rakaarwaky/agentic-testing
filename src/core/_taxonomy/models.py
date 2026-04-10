@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 from abc import ABC, abstractmethod
 
 
@@ -46,13 +46,13 @@ class ITestHealer(ABC):
 
 class ICodeAnalyzer(ABC):
     @abstractmethod
-    async def analyze_file(self, file_path: str) -> dict:
+    async def analyze_file(self, file_path: str) -> dict[str, Any]:
         raise NotImplementedError()
 
 
 class IQualityAuditor(ABC):
     @abstractmethod
-    async def check_coverage(self, target_dir: str) -> dict:
+    async def check_coverage(self, target_dir: str) -> dict[str, Any]:
         raise NotImplementedError()
 class ITestGenerator(ABC):
     @abstractmethod

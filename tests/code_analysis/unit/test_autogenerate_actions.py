@@ -35,7 +35,10 @@ async def test_generate_test_success(mock_analyzer, mock_file_system):
     written_content = args[1]
     
     assert "import pytest" in written_content
-    assert "from src.math.calc import *" in written_content
+    assert "import importlib.util" in written_content
+    assert "import sys" in written_content
+    assert f"spec = importlib.util.spec_from_file_location('calc', 'src/math/calc.py')" in written_content
+    assert "from calc import *" in written_content
     assert "def test_compute_value():" in written_content
     assert "def test__private_func():" not in written_content
     assert "class TestCalculator:" in written_content
@@ -68,5 +71,7 @@ async def test_generate_test_absolute_path(mock_analyzer, mock_file_system):
     args, kwargs = mock_file_system.write_file.call_args
     written_content = args[1]
     
-    # It should fall back to just importing the base name
+    # It should use importlib logic with the basename
+    assert "import importlib.util" in written_content
+    assert "spec = importlib.util.spec_from_file_location('module', '/absolute/path/to/module.py')" in written_content
     assert "from module import *" in written_content
