@@ -12,12 +12,12 @@ class PytestRunner(ITestRunner):
 
     async def run_test(self, test_path: str) -> TestResult:
         import sys
-        
-        # Use Python's sys.executable to run pytest as a module within the active environment.
-        cmd = f"{sys.executable} -m pytest {test_path} -v --tb=short"
 
-        proc = await asyncio.create_subprocess_shell(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        # Fix #3: Use create_subprocess_exec instead of create_subprocess_shell
+        # to prevent shell injection vulnerabilities
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-m", "pytest", test_path, "-v", "--tb=short",
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         stdout, stderr = await proc.communicate()
         output = stdout.decode() + stderr.decode()

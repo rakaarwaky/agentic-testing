@@ -5,6 +5,7 @@ import asyncio
 import click
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from ...bootstrap.container import get_container
@@ -192,19 +193,26 @@ def migrate_test(ctx, test_path, backup):
     
     try:
         content = container.file_system.read_file(test_path)
-        
+
         if backup:
             backup_path = test_path + '.bak'
             container.file_system.write_file(backup_path, content)
             click.echo(f"✅ Backup created: {backup_path}")
-        
-        # Migration logic
+
+        # Migration logic using regex for valid Python output
         new_content = content.replace("unittest.TestCase", "")
-        new_content = new_content.replace("self.assertEqual(", "assert ")
-        new_content = new_content.replace("self.assertTrue(", "assert ")
-        new_content = new_content.replace("self.assertFalse(", "assert not ")
-        new_content = new_content.replace("import unittest\n", "")
-        
+        # Fix #1: Use regex to produce valid pytest assertions
+        new_content = re.sub(
+            r'self\.assertEqual\((.+?),\s*(.+?)\)', r'assert \1 == \2', new_content
+        )
+        new_content = re.sub(
+            r'self\.assertTrue\((.+?)\)', r'assert \1', new_content
+        )
+        new_content = re.sub(
+            r'self\.assertFalse\((.+?)\)', r'assert not \1', new_content
+        )
+        new_content = re.sub(r'import unittest\n', '', new_content)
+
         container.file_system.write_file(test_path, new_content)
         click.echo(f"✅ Migrated {test_path} to pytest-style")
         

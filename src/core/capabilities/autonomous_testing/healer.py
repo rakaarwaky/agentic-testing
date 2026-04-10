@@ -1,4 +1,5 @@
 import logging
+import shutil
 from ..._taxonomy.models import ITestHealer, TestResult, IFileSystem
 
 logger = logging.getLogger(__name__)
@@ -8,11 +9,30 @@ class HeuristicHealer(ITestHealer):
 
     def __init__(self, file_system: IFileSystem):
         self.file_system = file_system
+        self._backup_created = False
+
+    def _create_backup(self, file_path: str) -> str:
+        """Create backup before modifying a file. Returns backup path."""
+        backup_path = file_path + '.healer.bak'
+        try:
+            shutil.copy2(file_path, backup_path)
+            logger.info(f"Backup created: {backup_path}")
+            self._backup_created = True
+            return backup_path
+        except OSError as e:
+            logger.error(f"Failed to create backup for {file_path}: {e}")
+            return None
 
     async def attempt_fix(self, result: TestResult) -> bool:
         """Attempts to fix based on error_type and metadata."""
         if not result.error_type:
             return False
+
+        # Create backup before any fix attempt (Fix #2)
+        if result.failure and result.failure.file_path:
+            self._create_backup(result.failure.file_path)
+        elif result.target:
+            self._create_backup(result.target)
 
         strategies = {
             "ImportError": self._fix_missing_sys_path,

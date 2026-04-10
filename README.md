@@ -53,7 +53,7 @@ We recommend managing the environment with [`uv`](https://github.com/astral-sh/u
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/agentic-testing.git
+git clone https://github.com/rakaarwaky/agentic-testing.git
 cd agentic-testing
 
 # Create a virtual environment and install dependencies

@@ -14,12 +14,14 @@ class CoverageAuditor(IQualityAuditor):
             report_file = tmp.name
 
         try:
-            # Use Python's sys.executable for better portability across environments
+            # Fix #3: Use create_subprocess_exec instead of create_subprocess_shell
+            # to prevent shell injection vulnerabilities
             import sys
-            cmd = f"{sys.executable} -m pytest --cov={target_dir} --cov-report=json:{report_file}"
-
-            proc = await asyncio.create_subprocess_shell(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-m", "pytest",
+                f"--cov={target_dir}",
+                f"--cov-report=json:{report_file}",
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             await proc.communicate()
 
