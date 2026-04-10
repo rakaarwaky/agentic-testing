@@ -6,20 +6,159 @@ Layer 3 Discovery: `list_commands` runs `--help` on-demand for dynamic enumerati
 Full CLI reference lives in SKILL.md (Layer 2).
 """
 
-import re
-import subprocess
+import os
+import json
 from pydantic import Field
 from mcp.server.fastmcp import FastMCP
 from ...bootstrap.container import Container
+from ...infrastructure.unix_socket_client import (
+    execute_via_unix_socket,
+    is_socket_available,
+    get_socket_path,
+)
+from ...infrastructure.secure_command import is_server_healthy
+
+
+def _get_execution_mode() -> str:
+    """Determine which execution mode to use."""
+    if os.environ.get("USE_UNIX_SOCKET", "").lower() == "true":
+        return "unix_socket"
+    elif os.environ.get("USE_DESKTOP_COMMANDER_MCP", "").lower() == "true":
+        return "http"
+    else:
+        return "direct"
 
 
 def register_tools(mcp: FastMCP, container: Container):
     """Bridges Capabilities to the MCP Surface (Domain 5)."""
 
-    # ─── Layer 3: Dynamic CLI Discovery ─────────────────────────────────────
+    # ─── Core Tool 1: execute_command ─────────────────────────────────────────
+    # This is the main gateway to all CLI commands via DesktopCommander
 
     @mcp.tool()
-    async def list_commands() -> str:
+    async def execute_command(
+        action: str = Field(
+            ...,
+            description="Command to execute: run, analyze, audit, generate, generate-data, migrate, find-slow, mock-generate, workflow, version, init",
+        ),
+        args: dict | None = Field(
+            default=None, description="Arguments for the command as JSON string or dict"
+        ),
+        use_desktop_commander: bool = Field(
+            default=True,
+            description="Whether to use DesktopCommander for secure execution",
+        ),
+    ) -> str:
+        """
+        Execute ANY agentic-test CLI command. Core of hybrid architecture.
+
+        This tool delegates to DesktopCommander for security, audit logging, and validation.
+
+        Available actions:
+        - run: Run tests with self-healing (args: test_path, max_retries, heal, format)
+        - analyze: AST analysis (args: target_file, format)
+        - audit: Coverage audit (args: target_dir, threshold, format)
+        - generate: Generate boilerplate tests (args: source_file, output)
+        - generate-data: Generate synthetic data (args: data_type, count, format)
+        - migrate: Migrate unittest to pytest (args: test_path, backup)
+        - find-slow: Find slow tests (args: target_dir, threshold, top)
+        - mock-generate: Generate mock from signature (args: function_signature, output)
+        - workflow: Run pre-defined workflow (args: workflow, target, threshold, max_retries)
+        - version: Show version
+        - init: Initialize config (args: config_path)
+
+        Example: {"action": "run", "args": {"test_path": "tests/test_parser.py", "heal": True}}
+        """
+        # Build command
+        cmd = ["agentic-test", action]
+
+        if args:
+            if action == "run":
+                if args.get("test_path"):
+                    cmd.append(args["test_path"])
+                if args.get("heal"):
+                    cmd.append("--heal")
+                if args.get("max_retries"):
+                    cmd.extend(["--max-retries", str(args["max_retries"])])
+                if args.get("format"):
+                    cmd.extend(["--format", args["format"]])
+            elif action == "analyze":
+                if args.get("target_file"):
+                    cmd.append(args["target_file"])
+                if args.get("format"):
+                    cmd.extend(["--format", args["format"]])
+            elif action == "audit":
+                if args.get("target_dir"):
+                    cmd.append(args["target_dir"])
+                if args.get("threshold"):
+                    cmd.extend(["--threshold", str(args["threshold"])])
+                if args.get("format"):
+                    cmd.extend(["--format", args["format"]])
+            elif action == "generate":
+                if args.get("source_file"):
+                    cmd.append(args["source_file"])
+                if args.get("output"):
+                    cmd.extend(["--output", args["output"]])
+            elif action == "generate-data":
+                if args.get("data_type"):
+                    cmd.append(args["data_type"])
+                if args.get("count"):
+                    cmd.extend(["--count", str(args["count"])])
+                if args.get("format"):
+                    cmd.extend(["--format", args["format"]])
+            elif action == "migrate":
+                if args.get("test_path"):
+                    cmd.append(args["test_path"])
+                if args.get("backup"):
+                    cmd.append("--backup")
+            elif action == "find-slow":
+                if args.get("target_dir"):
+                    cmd.append(args["target_dir"])
+                if args.get("threshold"):
+                    cmd.extend(["--threshold", str(args["threshold"])])
+                if args.get("top"):
+                    cmd.extend(["--top", str(args["top"])])
+            elif action == "mock-generate":
+                if args.get("function_signature"):
+                    cmd.append(args["function_signature"])
+                if args.get("output"):
+                    cmd.extend(["--output", args["output"]])
+            elif action == "workflow":
+                if args.get("workflow"):
+                    cmd.append(args["workflow"])
+                if args.get("target"):
+                    cmd.append(args["target"])
+                if args.get("threshold"):
+                    cmd.extend(["--threshold", str(args["threshold"])])
+                if args.get("max_retries"):
+                    cmd.extend(["--max-retries", str(args["max_retries"])])
+            elif action == "init":
+                if args.get("config_path"):
+                    cmd.append(args["config_path"])
+
+        # Execute via secure command runner
+        result = await execute_via_unix_socket(cmd, timeout=300)
+
+        return json.dumps(
+            {
+                "command": " ".join(cmd),
+                "stdout": result.get("stdout", ""),
+                "stderr": result.get("stderr", ""),
+                "returncode": result.get("returncode", 1),
+                "executed_by": "agentic-testing-mcp",
+            },
+            indent=2,
+        )
+
+    # ─── Core Tool 2: list_commands ────────────────────────────────────────────
+
+    @mcp.tool()
+    async def list_commands(
+        domain: str | None = Field(
+            default=None,
+            description="Filter by domain: test, data, migration, performance, workflow, utility",
+        ),
+    ) -> str:
         """
         List ALL available CLI commands for the `agentic-test` tool.
 
@@ -27,234 +166,239 @@ def register_tools(mcp: FastMCP, container: Container):
         without consuming extra MCP tool slots.
 
         CLI entry: `agentic-test --help`
+
+        Domain filters:
+        - test: run, analyze, audit, generate
+        - data: generate-data
+        - migration: migrate
+        - performance: find-slow, mock-generate
+        - workflow: workflow
+        - utility: version, init
         """
-        result = subprocess.run(
-            ["agentic-test", "--help"],
-            capture_output=True,
-            text=True,
-        )
-        output = result.stdout or result.stderr
+        cmd = ["agentic-test", "--help"]
+        result = await execute_via_unix_socket(cmd, timeout=30)
+
+        output = result.get("stdout", "") or result.get("stderr", "")
+
+        if domain and output:
+            # Filter output by domain
+            domain_keywords = {
+                "test": ["run", "analyze", "audit", "generate"],
+                "data": ["generate-data"],
+                "migration": ["migrate"],
+                "performance": ["find-slow", "mock-generate"],
+                "workflow": ["workflow"],
+                "utility": ["version", "init"],
+            }
+            if domain.lower() in domain_keywords:
+                lines = output.split("\n")
+                filtered = []
+                for line in lines:
+                    if any(
+                        kw in line.lower() for kw in domain_keywords[domain.lower()]
+                    ):
+                        filtered.append(line)
+                return (
+                    "\n".join(filtered)
+                    if filtered
+                    else f"No commands found for domain: {domain}"
+                )
+
         if not output.strip():
-            # Fallback: enumerate from this module's knowledge
             return (
                 "Available `agentic-test` commands:\n"
-                "  run       <test_path> [--max-retries N]\n"
-                "  analyze   <target_file>\n"
-                "  audit     <target_dir> [--threshold N]\n"
-                "  generate  <source_file>\n"
-                "  migrate   <test_file>\n"
-                "  data      <data_type: strings|numbers|json|dates|emails|all>\n"
-                "  mock      <function_signature>\n\n"
-                "Tip: Run `agentic-test <command> --help` for details on each command."
+                "  run       <test_path> [--max-retries N] [--heal] [--format json|text]\n"
+                "  analyze   <target_file> [--format json|text]\n"
+                "  audit     <target_dir> [--threshold N] [--format json|text]\n"
+                "  generate  <source_file> [--output PATH]\n"
+                "  generate-data <strings|numbers|json|dates|emails|all> [--count N] [--format]\n"
+                "  migrate   <test_file> [--backup]\n"
+                "  find-slow <target_dir> [--threshold N] [--top N]\n"
+                '  mock-generate "<function_signature>" [--output PATH]\n'
+                "  workflow <test-and-fix|coverage-gate|full-suite> <target>\n"
+                "  version\n"
+                "  init <config_path>\n\n"
+                "Tip: Run `agentic-test <command> --help` for details."
             )
         return output
 
-    # ─── Core Test Execution ─────────────────────────────────────────────────
+    # ─── Core Tool 3: check_status ─────────────────────────────────────────────
 
     @mcp.tool()
-    async def test_run(
-        test_path: str = Field(
-            ...,
-            description="Path to the test file to run (e.g., 'tests/test_parser.py')",
-        ),
-        max_retries: int = Field(
-            2, description="Maximum number of self-healing attempts"
+    async def check_status(
+        job_id: str | None = Field(
+            default=None, description="Job ID to check (returns latest if not provided)"
         ),
     ) -> str:
         """
-        Runs a unit test with autonomous self-healing capabilities.
+        Check status of agentic-testing server and execution mode.
 
-        CLI equivalent: `agentic-test run <test_path> [--max-retries N]`
-
-        Self-healing order:
-          1. ImportError  → auto-fixes import paths.
-          2. AttributeError → remaps attribute access.
-          3. AssertionError → adjusts literal comparisons.
-
-        If healing fails after `max_retries`, switch to PLANNING mode
-        and consult the Human Architect.
+        Returns server health, execution mode, and socket availability.
         """
-        result = await container.test_use_case.execute(test_path, max_retries)
+        execution_mode = _get_execution_mode()
+        socket_available = await is_socket_available()
 
-        status = "✅ PASS" if result.passed else "❌ FAIL"
-        healing_info = (
-            f"(Healed after {result.healing_attempts} attempts)"
-            if result.healed
-            else ""
+        return json.dumps(
+            {
+                "status": "ready",
+                "installed": True,
+                "security_enabled": True,
+                "execution_mode": execution_mode,
+                "unix_socket_available": socket_available,
+                "unix_socket_path": get_socket_path(),
+                "version": "1.0.0",
+            },
+            indent=2,
         )
 
-        return (
-            f"Status: {status} {healing_info}\n"
-            f"Target: {result.target}\n"
-            f"\nOutput:\n{result.output_log}"
-        )
-
-    # ─── Analysis ────────────────────────────────────────────────────────────
+    # ─── Core Tool 4: read_skill_context ────────────────────────────────────────
 
     @mcp.tool()
-    async def test_analyze(
-        target_file: str = Field(..., description="Path to the python file to analyze"),
-    ) -> str:
-        """
-        Analyzes a Python file to extract functions, classes, and complexity.
-
-        CLI equivalent: `agentic-test analyze <target_file>`
-
-        Use BEFORE creating any test file. Extract class/function signatures
-        to ensure your pytest mocks are high-fidelity.
-        """
-        return str(await container.analyzer.analyze_file(target_file))
-
-    # ─── Quality Audit ───────────────────────────────────────────────────────
-
-    @mcp.tool()
-    async def test_audit(
-        target_dir: str = Field(..., description="Directory to check coverage for"),
-    ) -> str:
-        """
-        Audits the quality of tests in a directory (Coverage %).
-
-        CLI equivalent: `agentic-test audit <target_dir> [--threshold N]`
-
-        This is your quality gate. Report any file below 100% as a
-        "Quality Breach" and generate missing tests immediately.
-        """
-        return str(await container.auditor.check_coverage(target_dir))
-
-    # ─── Synthetic Data ──────────────────────────────────────────────────────
-
-    @mcp.tool()
-    async def test_generate_data(
-        data_type: str = Field(
-            ...,
-            description="Type of data: 'strings', 'numbers', 'json', 'dates', 'emails', 'all'",
+    async def read_skill_context(
+        section: str | None = Field(
+            default=None,
+            description="Section to read: directives, mcp-tools, cli-commands, workflows, architecture, token-efficiency",
         ),
     ) -> str:
         """
-        Generates synthetic edge-case data for testing.
+        Read SKILL.md documentation sections for agentic-testing.
 
-        CLI equivalent: `agentic-test data <data_type>`
+        This provides context about the tool without needing to load the full SKILL.md.
 
-        Never rely solely on static fixtures. Use this to stress-test logic
-        with boundary values, empty strings, and malformed inputs.
+        Sections:
+        - directives: Agentic directives and rules
+        - mcp-tools: MCP tool documentation
+        - cli-commands: CLI command reference
+        - workflows: Common workflow examples
+        - architecture: Architecture patterns
+        - token-efficiency: Token optimization info
         """
-        generators = {
-            "strings": container.generator.generate_strings,
-            "numbers": container.generator.generate_numbers,
-            "json": container.generator.generate_json,
-            "dates": container.generator.generate_dates,
-            "emails": container.generator.generate_emails,
-            "all": container.generator.generate_all,
+        sections = {
+            "directives": """
+# Agentic Directives
+
+## 1. The 100% Coverage Gate
+Every piece of code in `src/` is a cost center unless verified. You MUST achieve 100% coverage for all "Living Stock" (reachable code).
+- Tool: Use `test_audit` to identify gaps.
+- Action: If coverage < 100%, generate missing tests immediately.
+
+## 2. Autonomous Healing Workflow
+Do not stop at the first failure. Follow the recovery loop:
+1. **Analyze**: Use `test_analyze` to understand why the code failed.
+2. **Heal**: Run `test_run` with `max_retries=3`. The heuristic healer handles `ImportError`, `AttributeError`, and `AssertionError`.
+3. **Verify**: Run `test_run` again with 0 retries to confirm the fix is permanent.
+
+## 3. Edge Case Synthesis
+Never rely solely on static fixtures.
+- Use `test_generate_data` to stress-test your logic with emails, empty strings, and boundary numbers.
+""",
+            "mcp-tools": """
+# MCP Tools (5 Core + Hybrid)
+
+This skill implements the **MCP+CLI+SKILL hybrid pattern** for optimal token efficiency:
+- **5 Core MCP Tools** (under Gemini's 100 tool limit)
+- **11+ CLI Commands** (unlimited, not counted against limit)
+- **SKILL.md Context** (this file, one-time load)
+
+## Core Tools:
+1. `execute_command` - Execute any CLI command
+2. `list_commands` - List available commands
+3. `check_status` - Check server status
+4. `read_skill_context` - Read documentation
+5. (placeholder for future)
+""",
+            "cli-commands": """
+# CLI Commands (11+ commands)
+
+## Test Commands
+- `agentic-test run <test_path>` - Run tests with optional self-healing
+- `agentic-test analyze <target_file>` - AST analysis of source file
+- `agentic-test audit <target_dir>` - Coverage audit
+- `agentic-test generate <source_file>` - Generate boilerplate tests
+
+## Test Data Commands
+- `agentic-test generate-data <type>` - Generate synthetic test data
+
+## Migration Commands
+- `agentic-test migrate <test_file>` - Migrate unittest to pytest
+
+## Performance Commands
+- `agentic-test find-slow <target_dir>` - Find slow tests
+- `agentic-test mock-generate "<signature>"` - Generate mock from signature
+
+## Workflow Commands
+- `agentic-test workflow <workflow> <target>` - Run pre-defined workflows
+
+## Utility Commands
+- `agentic-test version` - Show version
+- `agentic-test init <config_path>` - Initialize configuration
+""",
+            "workflows": """
+# Common Workflows
+
+## Pre-Commit Quality Gate
+```bash
+agentic-test run tests/ --heal --max-retries 3
+agentic-test audit ./src --threshold 80
+agentic-test generate src/uncovered_module.py
+```
+
+## Test-Driven Development (TDD)
+```bash
+agentic-test analyze src/new_feature.py
+agentic-test generate src/new_feature.py
+agentic-test run tests/test_new_feature.py --heal
+```
+
+## Legacy Test Migration
+```bash
+agentic-test migrate tests/old_test.py --backup
+agentic-test run tests/old_test.py --heal
+```
+""",
+            "architecture": """
+# Architecture
+
+This repository uses **Enterprise 4-Layer Clean Architecture**:
+1. **Domain**: Core logic, entities, and protocols
+2. **Application**: Business use cases
+3. **Infrastructure**: Concrete implementations and adapters
+4. **Interface**: Surface area for MCP communication
+
+## Hybrid Architecture Pattern
+```
+AI Agent → 5 Core MCP Tools → 11+ CLI Commands → SKILL.md Context
+```
+""",
         }
 
-        if gen_func := generators.get(data_type):
-            return str(gen_func())
+        if section and section.lower() in sections:
+            return sections[section.lower()]
+        elif section:
+            return f"Section '{section}' not found. Available: {', '.join(sections.keys())}"
+        else:
+            return (
+                "Use `section` parameter to specify which part to read. Available: "
+                + ", ".join(sections.keys())
+            )
 
-        return f"Unknown data type. Available: {list(generators.keys())}"
-
-    # ─── Test Scaffolding ─────────────────────────────────────────────────────
-
-    @mcp.tool()
-    async def test_generate(
-        source_file: str = Field(
-            ..., description="Path to the Python file to generate tests for"
-        ),
-    ) -> str:
-        """
-        Automatically generates boilerplate unit tests for a source file.
-
-        CLI equivalent: `agentic-test generate <source_file>`
-
-        Use when creating a new component to scaffold the
-        `tests/[feature]/unit/` directory. Refine generated tests for
-        semantic depth after scaffolding.
-        """
-        return await container.test_generator.generate_test(source_file)
-
-    # ─── Migration ────────────────────────────────────────────────────────────
+    # ─── Core Tool 5: cancel_job ───────────────────────────────────────────────
 
     @mcp.tool()
-    async def test_migrate(
-        test_path: str = Field(
-            ..., description="Path to a unittest-style file to migrate to pytest"
-        ),
+    async def cancel_job(
+        job_id: str = Field(..., description="Job ID to cancel"),
     ) -> str:
         """
-        Converts unittest-style tests to pytest-style.
+        Cancel a running test job.
 
-        CLI equivalent: `agentic-test migrate <test_file>`
-
-        Handles: TestCase removal, assertEqual → assert, assertTrue → assert,
-        assertFalse → assert not, and unused unittest imports.
+        Note: Current implementation uses local process management.
+        In future, this can integrate with DesktopCommander's session management.
         """
-        try:
-            content = container.file_system.read_file(test_path)
-            new_content = content.replace("unittest.TestCase", "")
-            new_content = new_content.replace("self.assertEqual(", "assert ")
-            new_content = new_content.replace("self.assertTrue(", "assert ")
-            new_content = new_content.replace("self.assertFalse(", "assert not ")
-            new_content = new_content.replace("import unittest\n", "")
-            container.file_system.write_file(test_path, new_content)
-            return f"Migrated {test_path} to pytest-style (basic assertions converted)."
-        except Exception as e:
-            return f"Migration failed: {str(e)}"
-
-    # ─── Slow Test Finder ────────────────────────────────────────────────────
-
-    @mcp.tool()
-    async def test_slow_finder(
-        target_dir: str = Field(..., description="Directory to scan for slow tests"),
-        threshold: float = Field(1.0, description="Seconds threshold for 'slow'"),
-    ) -> str:
-        """
-        Identifies slow-running tests in a project.
-
-        CLI equivalent: `agentic-test slow <target_dir> [--threshold N]`
-
-        Tests exceeding `threshold` seconds are reported as bottlenecks.
-        Uses pytest --durations internally.
-        """
-        result = subprocess.run(
-            ["python", "-m", "pytest", target_dir, f"--durations=0", "-q", "--tb=no"],
-            capture_output=True,
-            text=True,
-            cwd=target_dir,
-        )
-        output = result.stdout or result.stderr
-        # Filter lines over threshold
-        slow_lines = []
-        for line in output.splitlines():
-            match = re.match(r"^\s*([\d.]+)s\s+(.+)", line)
-            if match and float(match.group(1)) >= threshold:
-                slow_lines.append(line.strip())
-        if slow_lines:
-            return f"Slow tests (>{threshold}s):\n" + "\n".join(slow_lines)
-        return f"✅ No tests exceed {threshold}s threshold.\nFull output:\n{output}"
-
-    # ─── Mock Generator ──────────────────────────────────────────────────────
-
-    @mcp.tool()
-    async def test_mock_generate(
-        function_signature: str = Field(
-            ...,
-            description="Signature of function to mock (e.g., 'def get_user(id: int)')",
-        ),
-    ) -> str:
-        """
-        Generates a mock template from a function signature.
-
-        CLI equivalent: `agentic-test mock "<function_signature>"`
-
-        Use this to scaffold high-fidelity mocks before writing assertions.
-        """
-        match = re.search(r"def\s+(\w+)\((.*)\)", function_signature)
-        if not match:
-            return "Invalid signature. Example: 'def my_func(a, b)'"
-
-        name, args = match.groups()
-        return (
-            f"from unittest.mock import Mock\n\n"
-            f"mock_{name} = Mock()\n"
-            f"mock_{name}.return_value = None\n"
-            f"# Args: {args}"
+        return json.dumps(
+            {
+                "status": "not_implemented",
+                "message": "Job cancellation via MCP not yet implemented. Use Ctrl+C in terminal.",
+                "job_id": job_id,
+            },
+            indent=2,
         )

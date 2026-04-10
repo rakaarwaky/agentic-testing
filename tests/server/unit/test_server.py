@@ -23,7 +23,8 @@ async def test_tool_registration():
     register_tools(mcp, container)
     tools = await mcp.list_tools()
     tool_names = [t.name for t in tools]
-    assert "test_run" in tool_names
-    assert "test_analyze" in tool_names
-    assert "test_audit" in tool_names
-    assert "test_generate_data" in tool_names
+    assert "execute_command" in tool_names
+    assert "list_commands" in tool_names
+    assert "check_status" in tool_names
+    assert "read_skill_context" in tool_names
+    assert "cancel_job" in tool_names

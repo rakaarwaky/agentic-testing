@@ -14,6 +14,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
     { name = "pytest" },
@@ -32,6 +33,7 @@ dev = [
 requires-dist = [
     { name = "click" },
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "mcp", extras = ["cli"] },
     { name = "pydantic" },
     { name = "pytest" },

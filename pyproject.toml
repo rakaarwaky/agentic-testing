@@ -14,6 +14,7 @@ dependencies = [
     "pytest-asyncio",
     "pydantic",
     "click",
+    "httpx",
 ]
 
 [project.scripts]
