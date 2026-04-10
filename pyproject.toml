@@ -7,6 +7,23 @@ name = "agentic-testing"
 version = "1.0.0"
 description = "MCP server for autonomous unit testing and self-healing"
 requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Raka Arwaky", email = "arwaky90@gmail.com"}
+]
+keywords = ["mcp", "testing", "self-healing", "pytest", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/rakaarwaky/agentic-testing"
+Issues = "https://github.com/rakaarwaky/agentic-testing/issues"
 dependencies = [
     "mcp[cli]",
     "fastmcp",
