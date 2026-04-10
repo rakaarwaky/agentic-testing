@@ -1,17 +1,16 @@
-import pytest
-import importlib.util
+import os
 import sys
+import importlib.util
 
-spec = importlib.util.spec_from_file_location('gguf_parser', '/home/raka/llama.cpp/llama-tui/src/infrastructure/gguf_parser.py')
+import pytest
+
+gguf_path = "/home/raka/llama.cpp/llama-tui/src/infrastructure/gguf_parser.py"
+if not os.path.exists(gguf_path):
+    pytest.skip("gguf_parser not found — external dependency", allow_module_level=True)
+
+spec = importlib.util.spec_from_file_location("gguf_parser", gguf_path)
 if spec and spec.loader:
     module = importlib.util.module_from_spec(spec)
-    sys.modules['gguf_parser'] = module
+    sys.modules["gguf_parser"] = module
     spec.loader.exec_module(module)
 from gguf_parser import *
-
-# Auto-generated tests for /home/raka/llama.cpp/llama-tui/src/infrastructure/gguf_parser.py
-
-class TestGGUFParser:
-    def test_instantiation(self):
-        # TODO: Test GGUFParser
-        assert True
