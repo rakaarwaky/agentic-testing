@@ -20,10 +20,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Testing",
 ]
-
-[project.urls]
-Homepage = "https://github.com/rakaarwaky/agentic-testing"
-Issues = "https://github.com/rakaarwaky/agentic-testing/issues"
 dependencies = [
     "mcp[cli]",
     "fastmcp",
@@ -33,6 +29,10 @@ dependencies = [
     "click",
     "httpx",
 ]
+
+[project.urls]
+Homepage = "https://github.com/rakaarwaky/agentic-testing"
+Issues = "https://github.com/rakaarwaky/agentic-testing/issues"
 
 [project.scripts]
 agentic-testing = "src.surfaces.mcp.server:main"
@@ -56,4 +56,3 @@ dev = [
     "pytest-cov>=7.0.0",
     "ruff>=0.15.6",
 ]
-
