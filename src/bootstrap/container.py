@@ -14,6 +14,7 @@ class Container:
 
         # Map dependencies to container attributes
         self.runner = deps["runner"]
+        self.file_system = deps["file_system"]
         self.healer = deps["healer"]
         self.test_use_case = deps["test_use_case"]
         self.analyzer = deps["analyzer"]

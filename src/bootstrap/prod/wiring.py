@@ -33,6 +33,7 @@ def wire_dependencies() -> dict[str, typing.Any]:
 
     return {
         "runner": runner,
+        "file_system": file_system,
         "healer": healer,
         "test_use_case": test_use_case,
         "analyzer": analyzer,
