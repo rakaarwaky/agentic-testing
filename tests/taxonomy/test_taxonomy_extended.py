@@ -98,6 +98,12 @@ def test_test_run_completed_healed():
     assert event.duration_ms == 1500.0
 
 
+def test_test_run_completed_custom_timestamp():
+    """Preserves custom timestamp (exits __post_init__ early)."""
+    event = TestRunCompleted(path="/test.py", passed=True, timestamp="2025-01-01T00:00:00Z")
+    assert event.timestamp == "2025-01-01T00:00:00Z"
+
+
 # ── test_event: TestRunFailed ──
 
 
@@ -106,6 +112,12 @@ def test_test_run_failed_auto_timestamp():
     event = TestRunFailed(path="/test.py", error_type="ImportError", error_message="no module")
     assert event.timestamp != ""
     assert event.error_type == "ImportError"
+
+
+def test_test_run_failed_custom_timestamp():
+    """Preserves custom timestamp (exits __post_init__ early)."""
+    event = TestRunFailed(path="/test.py", error_type="IOError", error_message="fail", timestamp="2025-06-01T00:00:00Z")
+    assert event.timestamp == "2025-06-01T00:00:00Z"
 
 
 # ── test_event: HealApplied ──
@@ -122,3 +134,15 @@ def test_heal_applied_failed():
     """Failed heal."""
     event = HealApplied(path="/test.py", error_type="TypeError", success=False)
     assert event.success is False
+
+
+def test_heal_applied_custom_timestamp():
+    """Preserves custom timestamp (exits __post_init__ early)."""
+    event = HealApplied(path="/test.py", error_type="SyntaxError", success=True, timestamp="2025-03-15T12:00:00Z")
+    assert event.timestamp == "2025-03-15T12:00:00Z"
+
+
+def test_test_run_started_custom_timestamp():
+    """Preserves custom timestamp for TestRunStarted (exits __post_init__ early)."""
+    event = TestRunStarted(path="/test.py", timestamp="2025-04-20T10:00:00Z")
+    assert event.timestamp == "2025-04-20T10:00:00Z"

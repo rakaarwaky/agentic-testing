@@ -180,3 +180,67 @@ class TestGovernanceAdapter:
         
         violations = adapter.scan(str(tmp_path))
         assert len(violations) == 0  # agent is allowed to import anything
+
+    def test_scan_unknown_layer_skipped(self, tmp_path):
+        """Files with unrecognized layer (None) are skipped."""
+        rules = [("capabilities", "surfaces", "Cannot import")]
+        adapter = GovernanceAdapter(rules=rules, layer_map=LAYER_MAP)
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        unknown_dir = src_dir / "random"
+        unknown_dir.mkdir()
+        py_file = unknown_dir / "test.py"
+        py_file.write_text("from src.surfaces import cli_main_entry\n")
+
+        violations = adapter.scan(str(py_file))
+        assert len(violations) == 0
+
+    def test_scan_import_layer_unknown(self, tmp_path):
+        """Import from unrecognized module — target_layer is None, skip (line 125->126)."""
+        rules = [("capabilities", "surfaces", "Cannot import")]
+        adapter = GovernanceAdapter(rules=rules, layer_map=LAYER_MAP)
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        cap_dir = src_dir / "capabilities"
+        cap_dir.mkdir()
+        py_file = cap_dir / "test.py"
+        py_file.write_text("import os\nimport json\n")
+
+        violations = adapter.scan(str(py_file))
+        assert len(violations) == 0
+
+    def test_scan_no_matching_rule(self, tmp_path):
+        """Import target layer detected but no rule matches (line 128->123, 129->128)."""
+        rules = [("surfaces", "capabilities", "Cannot import caps")]
+        adapter = GovernanceAdapter(rules=rules, layer_map=LAYER_MAP)
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        cap_dir = src_dir / "capabilities"
+        cap_dir.mkdir()
+        py_file = cap_dir / "test.py"
+        # capabilities importing infrastructure — no rule forbids this
+        py_file.write_text("from src.infrastructure import shell_adapter\n")
+
+        violations = adapter.scan(str(py_file))
+        assert len(violations) == 0
+
+
+class TestExtractImportsEdgeCases:
+    def test_extract_imports_from_no_module(self, tmp_path):
+        """Relative import like 'from . import foo' — node.module is None (line 76->71)."""
+        py_file = tmp_path / "rel.py"
+        py_file.write_text("from . import foo\n")
+        imports = _extract_imports(str(py_file))
+        # Relative import with no module path — module is None, skipped
+        assert imports == []
+
+    def test_collect_non_py_file(self, tmp_path):
+        """Non-.py file in directory — skipped by _collect_python_files."""
+        (tmp_path / "readme.txt").write_text("not python")
+        (tmp_path / "main.py").write_text("# python")
+        files = _collect_python_files(str(tmp_path))
+        assert len(files) == 1
+        assert files[0].endswith("main.py")

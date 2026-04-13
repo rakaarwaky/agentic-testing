@@ -315,3 +315,211 @@ class TestReadSkillContextEdgeCases:
             result = await registered_tools[3](section=section_name)
             assert isinstance(result, str)
             assert len(result) > 10
+
+
+class TestExecuteCommandMinimalArgs:
+    """Tests for execute_command with minimal/missing args — covers falsy branch paths.
+
+    IMPORTANT: args={} is falsy in Python, so `if args:` skips the entire block.
+    We must pass a truthy dict (with at least one key) to enter the block,
+    then individual get() checks will be falsy for missing keys.
+    """
+
+    @pytest.mark.asyncio
+    async def test_run_missing_optional_keys(self, registered_tools):
+        """Run with truthy args but missing keys — all get() branches go falsy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                # Use a dummy key to make args truthy, but missing run-specific keys
+                result = await registered_tools[0](action="run", args={"_truthy": True})
+                data = json.loads(result)
+                assert data["returncode"] == 0
+                assert "agentic-test run" in data["command"]
+                assert "--heal" not in data["command"]
+                assert "--max-retries" not in data["command"]
+                assert "--format" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_run_partial_heal_only(self, registered_tools):
+        """Run with only heal=True — test_path falsy, max_retries falsy, format falsy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="run", args={"heal": True})
+                data = json.loads(result)
+                assert "--heal" in data["command"]
+                assert "--max-retries" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_analyze_missing_target_file(self, registered_tools):
+        """Analyze with truthy args but no target_file — falsy branch."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="analyze", args={"_truthy": True})
+                data = json.loads(result)
+                assert "analyze" in data["command"]
+                assert "--format" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_analyze_format_only(self, registered_tools):
+        """Analyze with format only — target_file falsy, format truthy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="analyze", args={"format": "text"})
+                data = json.loads(result)
+                assert "--format" in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_audit_missing_optional_keys(self, registered_tools):
+        """Audit with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="audit", args={"_truthy": True})
+                data = json.loads(result)
+                assert "audit" in data["command"]
+                assert "--threshold" not in data["command"]
+                assert "--format" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_audit_target_dir_only(self, registered_tools):
+        """Audit with target_dir only — threshold and format falsy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="audit", args={"target_dir": "src/"})
+                data = json.loads(result)
+                assert "src/" in data["command"]
+                assert "--threshold" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_optional_keys(self, registered_tools):
+        """Generate with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="generate", args={"_truthy": True})
+                data = json.loads(result)
+                assert "generate" in data["command"]
+                assert "--output" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_generate_data_missing_optional_keys(self, registered_tools):
+        """Generate-data with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="generate-data", args={"_truthy": True})
+                data = json.loads(result)
+                assert "generate-data" in data["command"]
+                assert "--count" not in data["command"]
+                assert "--format" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_generate_data_data_type_only(self, registered_tools):
+        """Generate-data with data_type only — count and format falsy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="generate-data", args={"data_type": "strings"})
+                data = json.loads(result)
+                assert "strings" in data["command"]
+                assert "--count" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_migrate_missing_optional_keys(self, registered_tools):
+        """Migrate with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="migrate", args={"_truthy": True})
+                data = json.loads(result)
+                assert "migrate" in data["command"]
+                assert "--backup" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_find_slow_missing_optional_keys(self, registered_tools):
+        """Find-slow with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="find-slow", args={"_truthy": True})
+                data = json.loads(result)
+                assert "find-slow" in data["command"]
+                assert "--threshold" not in data["command"]
+                assert "--top" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_find_slow_target_dir_only(self, registered_tools):
+        """Find-slow with target_dir only — threshold and top falsy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="find-slow", args={"target_dir": "tests/"})
+                data = json.loads(result)
+                assert "tests/" in data["command"]
+                assert "--top" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_mock_generate_missing_optional_keys(self, registered_tools):
+        """Mock-generate with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="mock-generate", args={"_truthy": True})
+                data = json.loads(result)
+                assert "mock-generate" in data["command"]
+                assert "--output" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_workflow_missing_optional_keys(self, registered_tools):
+        """Workflow with truthy args but missing keys — all falsy branches."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="workflow", args={"_truthy": True})
+                data = json.loads(result)
+                assert "workflow" in data["command"]
+                assert "--threshold" not in data["command"]
+                assert "--max-retries" not in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_workflow_workflow_only(self, registered_tools):
+        """Workflow with workflow name only — target, threshold, max_retries falsy."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="workflow", args={"workflow": "test-and-fix"})
+                data = json.loads(result)
+                assert "test-and-fix" in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_init_missing_config_path(self, registered_tools):
+        """Init with truthy args but missing config_path — falsy branch."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="init", args={"_truthy": True})
+                data = json.loads(result)
+                assert "init" in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_unknown_action_with_args(self, registered_tools):
+        """Unknown action with args — falls through to no elif match."""
+        with patch("src.surfaces.mcp_tools_registry.is_command_safe", return_value=(True, "ok")):
+            with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+                mock_exec.return_value = {"stdout": "ok", "stderr": "", "returncode": 0}
+                result = await registered_tools[0](action="unknown", args={"key": "val"})
+                data = json.loads(result)
+                assert "unknown" in data["command"]
+
+    @pytest.mark.asyncio
+    async def test_list_commands_domain_filter_no_match(self, registered_tools):
+        """List commands with valid domain but output has no matching keywords."""
+        with patch("src.surfaces.mcp_tools_registry.execute_via_unix_socket") as mock_exec:
+            mock_exec.return_value = {"stdout": "no relevant commands here", "stderr": ""}
+            result = await registered_tools[1](domain="migration")
+            assert "No commands found" in result or "no relevant" in result

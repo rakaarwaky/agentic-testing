@@ -364,3 +364,41 @@ class TestFixStrategyAbstract:
         # Can't instantiate directly, test via __init_subclass__
         with pytest.raises(TypeError):
             ConcreteStrategy(_make_fs())
+
+
+class TestTypeErrorNoChangeBranch:
+    """Branch 133->139: TypeErrorStrategy where replacement doesn't change content."""
+
+    def test_fix_no_content_change(self):
+        """Test when regex matches but replacement produces same content."""
+        with tempfile.NamedTemporaryFile(suffix=".py", delete=False, mode="w") as f:
+            # func() is NOT in the file, so .replace is a no-op
+            f.write("print('hello')\n")
+            fp = f.name
+        try:
+            s = TypeErrorStrategy(_make_fs())
+            log = "func() missing 1 required positional argument: 'x'"
+            result = TestResult(target=fp, passed=False, output_log=log, error_type="TypeError")
+            # func() not in file → new_content == content → returns False
+            assert s.apply_fix(result) is False
+        finally:
+            os.remove(fp)
+
+
+class TestAssertionNonMatchingLine:
+    """Branch 210->229: AssertionErrorStrategy with line that doesn't match regex."""
+
+    def test_fix_with_line_no_literal_no_var_match(self):
+        """Test _fix_with_line when expected not in line AND assert_var regex fails."""
+        with tempfile.NamedTemporaryFile(suffix=".py", delete=False, mode="w") as f:
+            # Line contains 'assert' but not 'assert X == Y' pattern
+            f.write("def test_foo():\n    assert something_complicated()\n")
+            fp = f.name
+        try:
+            s = AssertionErrorStrategy(_make_fs())
+            failure = FailureMetadata(line_number=2, message="assert 'a' == 'b'")
+            result = TestResult(target=fp, passed=False, output_log="", error_type="AssertionError", failure=failure)
+            # 'a' not in the line, and 'assert something_complicated()' doesn't match 'assert \w+ == \w+'
+            assert s.apply_fix(result) is False
+        finally:
+            os.remove(fp)

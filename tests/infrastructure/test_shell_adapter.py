@@ -117,3 +117,39 @@ async def test_pytest_runner_assertion_error_parsing_double_quotes():
         assert result.failure.line_number == 10
         assert result.failure.message == "AssertionError: Expected 'expected', got 'actual'"
 
+
+@pytest.mark.asyncio
+async def test_pytest_runner_assertion_error_no_string_match():
+    """AssertionError with non-string comparison — regex match is None, falls to line 63."""
+    runner = PytestRunner()
+
+    mock_proc = AsyncMock()
+    output = b"test_file.py:5: in test_num\nE       AssertionError: assert 1 == 2\n"
+    mock_proc.communicate.return_value = (output, b"")
+    mock_proc.returncode = 1
+
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
+        result = await runner.run_test("test_file.py")
+
+        assert result.passed is False
+        assert result.error_type == "AssertionError"
+        assert result.failure is not None
+        assert "1 == 2" in result.failure.message
+
+
+@pytest.mark.asyncio
+async def test_pytest_runner_error_type_not_assertion():
+    """Error type is not AssertionError — skips the regex match block (line 56->63)."""
+    runner = PytestRunner()
+
+    mock_proc = AsyncMock()
+    output = b"test_file.py:3: in test_fail\nE       TypeError: unsupported operand\n"
+    mock_proc.communicate.return_value = (output, b"")
+    mock_proc.returncode = 1
+
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
+        result = await runner.run_test("test_file.py")
+
+        assert result.passed is False
+        assert result.error_type == "TypeError"
+

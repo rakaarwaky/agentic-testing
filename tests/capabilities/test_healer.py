@@ -248,3 +248,16 @@ async def test_healer_assertion_no_regex_match():
     )
     healed = await healer.attempt_fix(result)
     assert healed is False
+
+
+@pytest.mark.asyncio
+async def test_healer_no_file_path():
+    """Branch 56->60: attempt_fix with empty target and no failure metadata."""
+    healer = HeuristicHealer(_make_fs())
+    result = TestResult(
+        target="", passed=False, output_log="some error",
+        error_type="ImportError", failure=None
+    )
+    healed = await healer.attempt_fix(result)
+    # Should not crash, should still try strategies (but fail since no file)
+    assert healed is False

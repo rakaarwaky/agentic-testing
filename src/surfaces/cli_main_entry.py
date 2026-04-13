@@ -343,7 +343,7 @@ def run_workflow(ctx, workflow, target, threshold, max_retries):
                 click.echo(f"❌ FAIL: Coverage {coverage}% < {threshold}%")
                 sys.exit(1)
 
-        elif workflow == 'full-suite':
+        else:  # workflow == 'full-suite' (validated by Click Choice)
             click.echo("🏃 Running full test suite...")
             # Would iterate over all test files
             click.echo("Full suite workflow - coming soon")
