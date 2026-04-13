@@ -44,6 +44,7 @@ source_directories = ["src"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 python_classes = "Test* !TestResult"
+python_files = ["test_*.py", "*_test_*.py", "*_test.py"]
 
 [tool.setuptools.packages.find]
 where = ["."]

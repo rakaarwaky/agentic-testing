@@ -1,6 +1,6 @@
 import asyncio
 import subprocess
-from ..core._taxonomy.models import ITestRunner, TestResult
+from ..taxonomy.models import ITestRunner, TestResult
 
 
 class PytestRunner(ITestRunner):
@@ -28,15 +28,16 @@ class PytestRunner(ITestRunner):
 
         if exit_code != 0:
             import re
-            from ..core._taxonomy.models import FailureMetadata
+            from ..taxonomy.models import FailureMetadata
 
             # Extraction logic (Heuristic)
             # Pattern: tests/test_failing_sample.py:4: in test_typo
             # Pattern: E   AssertionError: assert 'helo' == 'hello'
-            
+
             import os
             base_name = os.path.basename(test_path)
-            line_match = re.search(rf"{base_name}:(\d+):", output)
+            # Use re.escape to handle special regex characters in filenames
+            line_match = re.search(rf"{re.escape(base_name)}:(\d+):", output)
             line_number = int(line_match.group(1)) if line_match else None
             
             # Extract error type and message

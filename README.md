@@ -1,89 +1,204 @@
-# Agentic Testing MCP Server
+# Agentic Testing
 
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP Server](https://img.shields.io/badge/MCP-Server-blue.svg)](https://modelcontextprotocol.io/)
+[![AI Agent Ready](https://img.shields.io/badge/AI%20Agent-Ready-green.svg)](SKILL.md)
 
-**"The Self-Healing Unit Tester"**
+> Autonomous test engine with self-healing capabilities. Built for AI agents that write and maintain tests 24/7.
 
-The Agentic Testing MCP server fundamentally shifts how developers interact with unit tests. Built for integration with Claude Desktop and other coding agents, this server provides deep AST introspection, self-healing test execution, and autonomous coverage auditing. It does not just run tests; it actively understands failures and patches syntax or import errors on the fly.
-
----
-
-## 🚀 Key Capabilities
-
-- **Self-Healing Execution:** Intelligently analyzes `ImportError`, `NameError`, and basic syntax faults, applying patches and retrying without blocking the developer loop.
-- **Deep Introspection:** Leverages python AST parsing to map class structures, function dependencies, and code complexity before testing begins.
-- **Quality Auditing:** Enforces test coverage gates (default >80%), refusing to pass incomplete testing suites.
-- **Synthetic Data Generation:** Generates comprehensive fuzzing inputs (strings, dates, edge-case numbers) for robust test coverage.
+**For AI Agents:**
+- Autonomous test generation and execution
+- Self-healing test code (auto-fix failures)
+- Coverage auditing and quality gating
+- Synthetic test data generation
 
 ---
 
-## 🛠️ MCP Tools
+## Choose Your Path
 
-This server exposes the following tools directly to your agentic coding assistant:
-
-| Tool Name | Description |
-| :--- | :--- |
-| `test_run` | Executes a specific Python test file. If the test fails, the server uses autonomous self-healing capabilities up to a defined `max_retries` limit. |
-| `test_analyze` | Performs static AST analysis on a Python source file, returning classes, functions, docstrings, and cyclomatic complexity. |
-| `test_audit` | Scans a target directory, runs coverage analysis, and generates an audit report verifying coverage minimums. |
-| `test_generate` | Automatically scaffolds boilerplate `pytest` unit tests for a given source file based on its AST structure. |
-| `test_generate_data` | Generates synthetic edge-case data for testing (types: `strings`, `numbers`, `json`, `dates`, `emails`, `all`). |
+| I'm a...              | Start Here               | What I'll Do                          |
+| --------------------- | ------------------------ | ------------------------------------- |
+| **AI Agent**          | [SKILL.md](./SKILL.md)  | Autonomous testing, self-healing      |
+| **Developer**         | [Quick Start](#quick-start) | Run tests, generate tests, audit coverage |
+| **Contributor**       | [Contributing](#contributing) | Add capabilities, adapters, CLI commands |
 
 ---
 
-## 🏗️ Architecture
+## Why Use Agentic Testing
 
-This repository is strictly structured using the **Enterprise 4-Layer Clean Architecture**, ensuring high cohesion and loose coupling.
+### For Users
 
-1.  **Domain:** Core logic, entities, and protocols (`TestResult`, interfaces).
-2.  **Application:** Business use cases (`RunTestWithHealing` workflow orchestrator).
-3.  **Infrastructure:** Concrete implementations and adapters (`PytestAdapter`, `AstAnalyzer`).
-4.  **Interface:** Surface area for MCP communication (`server.py`).
+| Benefit                | Description                                        |
+| ---------------------- | -------------------------------------------------- |
+| **Self-Healing** | Automatically fixes broken tests                   |
+| **AST Analysis** | Understands code structure to generate smart tests |
+| **Coverage Audit** | Ensures test coverage meets thresholds             |
+| **Data Generation** | Creates edge-case test data automatically          |
+| **CI-Ready**     | Exit codes and JSON output for pipelines             |
 
-*(See `SKILL.md` for extended architectural guidelines and developer instructions).*
+### The Cost of NOT Using Agentic Testing
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ What you're losing right now:                                     │
+├─────────────────────────────────────────────────────────────────┤
+│ ❌ Hours writing boilerplate tests manually                    │
+│ ❌ Brittle tests that break on minor refactors                │
+│ ❌ Low coverage on edge cases                                  │
+│ ❌ Test suites that drift out of sync with code               │
+│ ❌ Manual test data creation for boundary conditions          │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 📦 Installation & Setup
-
-We recommend managing the environment with [`uv`](https://github.com/astral-sh/uv) for highly optimized dependency resolution.
-
-### 1. Local Development
+## Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/rakaarwaky/agentic-testing.git
-cd agentic-testing
-
-# Create a virtual environment and install dependencies
-uv venv
-source .venv/bin/activate
-uv pip install -e ".[dev]"
+cd /path/to/agentic-testing
+pip install -e .
 ```
 
-### 2. Registering with MCP Clients (Claude Desktop)
+Or with [uv](https://github.com/astral-sh/uv):
 
-To use this server with Claude Desktop or similar MCP clients, add the following configuration to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "agentic-testing": {
-      "command": "/absolute/path/to/agentic-testing/.venv/bin/python",
-      "args": [
-        "-m",
-        "src.surfaces.mcp.server"
-      ]
-    }
-  }
-}
+```bash
+uv sync
 ```
 
-*Note: You can also use the provided `wrapper.sh` script to streamline startup if you prefer a bash wrapper.*
+### Verify
+
+```bash
+agentic-test version
+agentic-test --help
+```
 
 ---
 
-## 📄 License
+## Quick Start
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+# Run tests with self-healing
+agentic-test run tests/test_parser.py --heal --max-retries 3
+
+# Analyze source code
+agentic-test analyze src/my_module.py
+
+# Audit coverage
+agentic-test audit ./src --threshold 80
+
+# Generate boilerplate tests
+agentic-test generate src/my_module.py
+
+# Generate synthetic test data
+agentic-test generate-data emails --count 10
+```
+
+---
+
+## CLI Commands
+
+### Test Commands
+
+| Command                                            | Description                                |
+| -------------------------------------------------- | ------------------------------------------ |
+| `agentic-test run <path> [--heal] [--max-retries N]` | Run tests with optional self-healing     |
+| `agentic-test analyze <file>`                    | AST analysis of source file                |
+| `agentic-test audit <dir> [--threshold N]`       | Coverage audit with pass/fail gate         |
+| `agentic-test generate <file>`                   | Generate boilerplate tests from AST        |
+
+### Data & Migration
+
+| Command                                          | Description                            |
+| ------------------------------------------------ | -------------------------------------- |
+| `agentic-test generate-data <type> [--count N]` | Generate synthetic test data           |
+| `agentic-test migrate <file> [--backup]`        | Migrate unittest to pytest             |
+
+### Performance & Workflow
+
+| Command                                     | Description                          |
+| ------------------------------------------- | ------------------------------------ |
+| `agentic-test find-slow <dir> [--threshold N]` | Find slow tests                  |
+| `agentic-test mock-generate "<signature>"`  | Generate mock from function signature |
+| `agentic-test workflow <name> <target>`     | Run pre-defined workflows            |
+
+### Utility
+
+| Command                     | Description                   |
+| --------------------------- | ----------------------------- |
+| `agentic-test version`    | Show version                  |
+| `agentic-test init <path>`| Initialize configuration file |
+
+Full list: `agentic-test --help`
+
+---
+
+## Architecture
+
+5-domain structure (same as auto_linter):
+
+```
+src/
+├── agent/              # Lifecycle, orchestration, DI container
+├── capabilities/       # Thinking logic — test execution, healing, analysis
+├── infrastructure/     # Adapters — pytest runner, file system, transports
+├── surfaces/           # Interfaces — CLI (Click), MCP (FastMCP)
+└── taxonomy/           # Value objects, interfaces, models
+```
+
+### Dependency Rules
+
+```
+surfaces      → capabilities       OK
+surfaces      → infrastructure     OK
+capabilities  → infrastructure     OK (uses interfaces from taxonomy)
+infrastructure → taxonomy          OK
+agent         → everything         OK (wiring layer)
+```
+
+---
+
+## Self-Healing
+
+Agentic Testing can automatically fix common test failures:
+
+| Error Type          | Fix Strategy                                      |
+| ------------------- | ------------------------------------------------- |
+| **ImportError**     | Add missing `sys.path` entries                    |
+| **AttributeError**  | Detect typos using Levenshtein distance           |
+| **AssertionError**  | Patch expected values with actual values          |
+| **TypeError**       | Add missing positional arguments                  |
+| **NameError**       | Insert common imports (`os`, `sys`, `json`, etc.) |
+
+Example healing loop:
+```
+1. Run test → FAIL (ImportError)
+2. Healer detects missing sys.path
+3. Applies fix, retries → PASS
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+| Variable              | Default          | Description             |
+| --------------------- | ---------------- | ----------------------- |
+| `DC_SOCKET_PATH`    | `/tmp/dc.sock` | Unix socket path for DesktopCommander |
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on:
+- Adding new test capabilities
+- Adding CLI commands
+- Adding MCP tools
+- Testing guidelines
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE).

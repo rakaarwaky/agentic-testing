@@ -1,133 +1,182 @@
 ---
 name: agentic-testing
-description: Autonomous Unit Testing Skill with AST-based healing and synthetic data generation.
+description: MCP server for autonomous test generation and self-healing — FOR AI AGENTS.
 version: 1.0.0
-standard: AES-2026-Skill
 ---
+# Agentic Testing Skill
 
-# Agentic Testing Skill 🧪
+> **This SKILL is designed FOR AI AGENTS.**
+>
+> Humans: use CLI `agentic-test` instead.
 
-This skill equips you with autonomous testing capabilities. Use it to maintain a high-quality codebase with self-healing test execution.
+Autonomous test engine with self-healing capabilities. Built specifically for AI agents to:
+- Generate tests autonomously
+- Self-heal broken tests
+- Audit code coverage
+- Create synthetic test data
 
-## 🧭 Agentic Directives
+## Why AI Agents Use agentic-testing
 
-### 1. The Coverage Gate
-Use `execute_command` with action `audit` to check coverage. If coverage is below threshold, generate missing tests immediately.
+| Feature                | Benefit for Agent                          |
+| ---------------------- | ------------------------------------------ |
+| **5 MCP Tools**  | Complete control via execute_command       |
+| **Self-Healing** | Auto-fix broken tests without intervention |
+| **Coverage Gate** | Ensure coverage meets thresholds           |
+| **Data Gen**     | Create edge-case test data automatically   |
+| **AST Analysis** | Understand code structure intelligently    |
 
-### 2. Autonomous Healing Workflow
-Do not stop at the first failure:
-1. **Run**: Use `execute_command` with action `run` and `heal: true`
-2. **Verify**: Run again with `heal: false` to confirm fix is permanent
+## Install
 
-### 3. Edge Case Synthesis
-Use `execute_command` with action `generate-data` to stress-test logic with boundary values.
-
-## 🛠 MCP Tools (5 Core)
-
-### Core Tool 1: `execute_command`
-Execute ANY agentic-test CLI command. Delegates to secure command runner.
-
-**Parameters**:
-- `action` (str): Command name (run, analyze, audit, generate, generate-data, migrate, find-slow, mock-generate, workflow, version, init)
-- `args` (dict, optional): Command arguments
-- `use_desktop_commander` (bool): Whether to use DesktopCommander (default: true)
-
-**Example**:
-```python
-result = await execute_command("run", {"test_path": "tests/test_parser.py", "heal": True})
+```bash
+pip install -e /path/to/agentic-testing
 ```
 
-### Core Tool 2: `list_commands`
-List all available CLI commands. Returns `agentic-test --help` output.
+## MCP Tools (5 tools)
 
-**Parameters**:
-- `domain` (str, optional): Filter by domain (test, data, migration, performance, workflow, utility)
+### `execute_command(action: str, args: dict | None)`
 
-### Core Tool 3: `check_status`
-Check server health, execution mode, and socket availability.
+Execute any CLI command. This is the primary tool.
 
-### Core Tool 4: `read_skill_context`
+```json
+{"action": "run", "args": {"test_path": "tests/test_parser.py", "heal": true, "max_retries": 3}}
+{"action": "analyze", "args": {"target_file": "src/my_module.py"}}
+{"action": "audit", "args": {"target_dir": "./src", "threshold": 80}}
+{"action": "generate", "args": {"source_file": "src/my_module.py"}}
+{"action": "generate-data", "args": {"data_type": "emails", "count": 10}}
+{"action": "migrate", "args": {"test_path": "tests/old_test.py", "backup": true}}
+{"action": "workflow", "args": {"workflow": "test-and-fix", "target": "tests/"}}
+{"action": "version"}
+{"action": "init", "args": {"config_path": "config.json"}}
+```
+
+### `list_commands(domain: str | None)`
+
+List all available CLI commands with descriptions.
+
+```json
+{ "domain": "test" }
+```
+
+Domains: `test`, `data`, `migration`, `performance`, `workflow`, `utility`
+
+### `read_skill_context(section: str | None)`
+
 Read SKILL.md documentation sections.
 
-**Sections**: directives, mcp-tools, cli-commands, workflows, architecture, token-efficiency
+```json
+{ "section": "workflows" }
+```
 
-### Core Tool 5: `cancel_job`
-Cancel a running test job (currently returns not_implemented).
+Sections: `directives`, `mcp-tools`, `cli-commands`, `workflows`, `architecture`, `token-efficiency`
 
-## 💻 CLI Commands (11+ commands)
+### `check_status(job_id: str | None)`
+
+Check server health, execution mode, and socket availability.
+
+### `cancel_job(job_id: str)`
+
+Cancel a running test job.
+
+## Recommended Agent Workflow
+
+```
+1. list_commands()              — discover available commands
+2. execute_command("analyze", {"target_file": "src/my_module.py"})  — understand code
+3. execute_command("generate", {"source_file": "src/my_module.py"}) — generate tests
+4. execute_command("run", {"test_path": "tests/test_my_module.py", "heal": true})  — run with healing
+5. execute_command("audit", {"target_dir": "./src", "threshold": 80})  — verify coverage
+```
+
+## CLI Commands Reference
 
 ### Test Commands
-- `agentic-test run <test_path>` — Run tests with self-healing
-  - Options: `--heal`, `--max-retries N`, `--format json|text`
-- `agentic-test analyze <target_file>` — AST analysis
-  - Options: `--format json|text`
-- `agentic-test audit <target_dir>` — Coverage audit
-  - Options: `--threshold N`, `--format json|text`
-- `agentic-test generate <source_file>` — Generate boilerplate tests
-  - Options: `--output PATH`
 
-### Test Data Commands
-- `agentic-test generate-data <type>` — Generate synthetic test data
-  - Types: strings, numbers, json, dates, emails, all
-  - Options: `--count N`, `--format json|text`
+| Command                                            | Description                                |
+| -------------------------------------------------- | ------------------------------------------ |
+| `agentic-test run <path> [--heal] [--max-retries N]` | Run tests with self-healing            |
+| `agentic-test analyze <file>`                    | AST analysis (classes, functions, complexity) |
+| `agentic-test audit <dir> [--threshold N]`       | Coverage audit with pass/fail gate         |
+| `agentic-test generate <file>`                   | Generate boilerplate tests from AST        |
 
-### Migration Commands
-- `agentic-test migrate <test_file>` — Migrate unittest to pytest
-  - Converts: `assertEqual` → `assert a == b`, `assertTrue` → `assert`, `assertFalse` → `assert not`
-  - Options: `--backup`
+### Data & Migration
 
-### Performance Commands
-- `agentic-test find-slow <target_dir>` — Find slow tests
-  - Options: `--threshold N`, `--top N`
-- `agentic-test mock-generate "<signature>"` — Generate mock from signature
-  - Options: `--output PATH`
+| Command                                          | Description                            |
+| ------------------------------------------------ | -------------------------------------- |
+| `agentic-test generate-data <type> [--count N]` | Generate synthetic test data (strings, numbers, json, dates, emails) |
+| `agentic-test migrate <file> [--backup]`        | Migrate unittest to pytest             |
 
-### Workflow Commands
-- `agentic-test workflow <workflow> <target>` — Run pre-defined workflows
-  - Workflows: test-and-fix, coverage-gate, full-suite
+### Performance & Workflow
 
-### Utility Commands
-- `agentic-test version` — Show version
-- `agentic-test init <config_path>` — Initialize configuration
+| Command                                     | Description                          |
+| ------------------------------------------- | ------------------------------------ |
+| `agentic-test find-slow <dir> [--threshold N]` | Find slow tests                  |
+| `agentic-test mock-generate "<signature>"`  | Generate mock from function signature |
+| `agentic-test workflow <name> <target>`     | Run pre-defined workflows (test-and-fix, coverage-gate, full-suite) |
 
-## 🔄 Common Workflows
+### Utility
 
-### Pre-Commit Quality Gate
-```bash
-agentic-test run tests/ --heal --max-retries 3
-agentic-test audit ./src --threshold 80
+| Command                     | Description                   |
+| --------------------------- | ----------------------------- |
+| `agentic-test version`    | Show version                  |
+| `agentic-test init <path>`| Initialize configuration file |
+
+## Self-Healing Capabilities
+
+The healer can automatically fix:
+
+| Error Type          | Fix Strategy                                      |
+| ------------------- | ------------------------------------------------- |
+| **ImportError**     | Add missing `sys.path` entries                    |
+| **ModuleNotFoundError** | Same as ImportError                           |
+| **AttributeError**  | Detect typos using Levenshtein distance           |
+| **AssertionError**  | Patch expected values with actual values          |
+| **TypeError**       | Add missing positional arguments                  |
+| **NameError**       | Insert common imports (`os`, `sys`, `json`, etc.) |
+
+## Configuration
+
+### Environment Variables
+
+| Variable              | Default          | Description             |
+| --------------------- | ---------------- | ----------------------- |
+| `DC_SOCKET_PATH`    | `/tmp/dc.sock` | Unix socket for DesktopCommander |
+
+### Config File
+
+```json
+{
+  "test": {
+    "default_max_retries": 3,
+    "heal_by_default": true
+  },
+  "audit": {
+    "default_threshold": 80
+  },
+  "generate": {
+    "test_directory": "tests"
+  }
+}
 ```
 
-### Test-Driven Development (TDD)
-```bash
-agentic-test analyze src/new_feature.py
-agentic-test generate src/new_feature.py
-agentic-test run tests/test_new_feature.py --heal
+## Architecture
+
+5-domain structure:
+
+```
+src/
+├── agent/              # DI container, wiring, logging
+├── capabilities/       # Test execution, healing, analysis, generation
+├── infrastructure/     # Pytest runner, file system, transports
+├── surfaces/           # CLI (Click), MCP (FastMCP)
+└── taxonomy/           # Interfaces, models, data classes
 ```
 
-### Legacy Test Migration
-```bash
-agentic-test migrate tests/old_test.py --backup
-agentic-test run tests/old_test.py --heal
+## Transport
+
+Connects to DesktopCommander via Unix socket for command execution.
+
 ```
-
-## ⚠️ Self-Healing Constraints
-
-### Supported Fixes
-- ✅ Import path fixes (`sys.path` injection)
-- ✅ Basic attribute remapping (Levenshtein-like)
-- ✅ Assertion value adjustments
-- ✅ Missing import statements
-- ✅ TypeError dummy argument injection
-
-### Safety
-- ✅ Backup created before every modification (`.healer.bak`)
-- ❌ Logic flow changes NOT supported
-- ❌ Complex dependency installs NOT supported
-- ❌ Business logic corrections NOT supported
-
-## 📐 Test Directory Standard
-
-- `tests/[feature]/unit/`: Logic verification, mock-heavy
-- `tests/[feature]/integration/`: Surface-to-Infrastructure verification
-- `tests/fixtures/`: Shared state
+DESKTOP_COMMANDER_URL              Mode
+────────────────────────────────────────────────
+/tmp/dc.sock                       Unix Socket (default)
+```
