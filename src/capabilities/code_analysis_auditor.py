@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 import subprocess
-from src.taxonomy.models import IQualityAuditor
+from src.taxonomy import IQualityAuditor
 
 
 class CoverageAuditor(IQualityAuditor):

@@ -1,12 +1,14 @@
-from dataclasses import dataclass
-from typing import Optional, Any
+"""test_result_entity — Test domain entities and interfaces."""
+
+from dataclasses import dataclass, field
+from typing import Optional
 from abc import ABC, abstractmethod
 
 
 @dataclass
 class FailureMetadata:
-    """Detailed metadata for a test failure (Taxonomy)."""
-    file_path: str
+    """Detailed metadata for a test failure."""
+    file_path: str = ""
     line_number: Optional[int] = None
     exception_type: Optional[str] = None
     message: Optional[str] = None
@@ -14,7 +16,7 @@ class FailureMetadata:
 
 @dataclass
 class TestResult:
-    """Core entity representing the outcome of a test execution (Taxonomy)."""
+    """Core entity representing test execution outcome."""
 
     target: str
     passed: bool
@@ -26,68 +28,91 @@ class TestResult:
     healed: bool = False
     healing_attempts: int = 0
 
-    # Ensure pytest doesn't collect this as a test class
     __test__ = False
+
+    @property
+    def position(self) -> str:
+        if self.failure and self.failure.line_number:
+            return f"{self.target}:{self.failure.line_number}"
+        return self.target
+
+    @property
+    def error_code(self) -> str:
+        return self.error_type or "UNKNOWN"
+
+    @property
+    def identity(self) -> str:
+        return f"{self.target}:{self.error_type or 'pass'}"
+
+    def mark_healed(self, attempts: int):
+        """Mark this result as healed after retry."""
+        self.healed = True
+        self.healing_attempts = attempts
 
 
 class ITestRunner(ABC):
+    """Interface for test execution."""
+
     @abstractmethod
     async def run_test(self, test_path: str) -> TestResult:
-        """Executes a pytest run for a specific file."""
-        raise NotImplementedError()
+        ...
 
 
 class ITestHealer(ABC):
+    """Interface for test healing."""
+
     @abstractmethod
     async def attempt_fix(self, result: TestResult) -> bool:
-        """Tries to fix the code based on the TestResult error."""
-        raise NotImplementedError()
+        ...
 
 
 class ICodeAnalyzer(ABC):
+    """Interface for code analysis."""
+
     @abstractmethod
-    async def analyze_file(self, file_path: str) -> dict[str, Any]:
-        raise NotImplementedError()
+    async def analyze_file(self, file_path: str) -> dict:
+        ...
 
 
 class IQualityAuditor(ABC):
+    """Interface for coverage auditing."""
+
     @abstractmethod
-    async def check_coverage(self, target_dir: str) -> dict[str, Any]:
-        raise NotImplementedError()
+    async def check_coverage(self, target_dir: str) -> dict:
+        ...
+
+
 class ITestGenerator(ABC):
+    """Interface for test generation."""
+
     @abstractmethod
     async def generate_test(self, source_file: str) -> str:
-        """Generates a unit test file for a given source file."""
-        raise NotImplementedError()
+        ...
 
 
 class IFileSystem(ABC):
+    """Interface for file system operations."""
+
     @abstractmethod
     def read_file(self, path: str) -> str:
-        """Reads content from a file."""
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def write_file(self, path: str, content: str) -> None:
-        """Writes content to a file."""
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def file_exists(self, path: str) -> bool:
-        """Checks if a file exists."""
-        raise NotImplementedError()
-        
+        ...
+
     @abstractmethod
     def read_lines(self, path: str) -> list[str]:
-        """Reads content as lines."""
-        raise NotImplementedError()
-        
+        ...
+
     @abstractmethod
     def write_lines(self, path: str, lines: list[str]) -> None:
-        """Writes lines to a file."""
-        raise NotImplementedError()
-        
+        ...
+
     @abstractmethod
     def makedirs(self, path: str, exist_ok: bool = True) -> None:
-        """Creates a directory and all parent directories."""
-        raise NotImplementedError()
+        ...

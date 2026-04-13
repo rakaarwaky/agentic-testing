@@ -6,9 +6,25 @@ from ..capabilities.code_analysis_actions import AstAnalyzer
 from ..capabilities.code_analysis_auditor import CoverageAuditor
 from ..capabilities.synthetic_data_actions import SimpleDataGenerator
 from ..capabilities.autogenerate_actions import AutogenerateTestUseCase
-
+from ..capabilities.governance_adapter import GovernanceAdapter
 
 import typing
+
+# ─── Architecture Rules ──────────────────────────────────────────────────────
+# AES Layer Rules: strict dependency direction
+LAYER_RULES = [
+    ("capabilities", "surfaces", "Capabilities must not import Surfaces"),
+    ("infrastructure", "surfaces", "Infrastructure must not import Surfaces"),
+]
+
+LAYER_MAP = {
+    "infrastructure": "infrastructure",
+    "capabilities": "capabilities",
+    "surfaces": "surfaces",
+    "agent": "agent",
+    "taxonomy": "taxonomy",
+}
+
 
 def wire_dependencies() -> dict[str, typing.Any]:
     """Level 3b: Production - Wiring specific infrastructure and capabilities."""
@@ -31,6 +47,9 @@ def wire_dependencies() -> dict[str, typing.Any]:
     # Capability: Autogenerate
     test_generator = AutogenerateTestUseCase(analyzer, file_system)
 
+    # Capability: Governance
+    governance = GovernanceAdapter(rules=LAYER_RULES, layer_map=LAYER_MAP)
+
     return {
         "runner": runner,
         "file_system": file_system,
@@ -40,4 +59,5 @@ def wire_dependencies() -> dict[str, typing.Any]:
         "auditor": auditor,
         "generator": generator,
         "test_generator": test_generator,
+        "governance": governance,
     }

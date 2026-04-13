@@ -1,6 +1,6 @@
 import asyncio
 import subprocess
-from ..taxonomy.models import ITestRunner, TestResult
+from ..taxonomy import ITestRunner, TestResult
 
 
 class PytestRunner(ITestRunner):
@@ -28,7 +28,7 @@ class PytestRunner(ITestRunner):
 
         if exit_code != 0:
             import re
-            from ..taxonomy.models import FailureMetadata
+            from ..taxonomy import FailureMetadata
 
             # Extraction logic (Heuristic)
             # Pattern: tests/test_failing_sample.py:4: in test_typo

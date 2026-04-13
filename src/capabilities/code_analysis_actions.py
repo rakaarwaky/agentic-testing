@@ -1,5 +1,5 @@
 import ast
-from src.taxonomy.models import ICodeAnalyzer
+from src.taxonomy import ICodeAnalyzer
 
 
 class AstAnalyzer(ICodeAnalyzer):

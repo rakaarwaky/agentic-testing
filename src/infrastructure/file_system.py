@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from ..taxonomy.models import IFileSystem
+from ..taxonomy import IFileSystem
 
 
 class PathValidationError(ValueError):

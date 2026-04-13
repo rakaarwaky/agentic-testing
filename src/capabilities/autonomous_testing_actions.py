@@ -1,4 +1,4 @@
-from src.taxonomy.models import ITestRunner, ITestHealer, TestResult
+from src.taxonomy import ITestRunner, ITestHealer, TestResult
 
 
 class RunTestWithHealingUseCase:

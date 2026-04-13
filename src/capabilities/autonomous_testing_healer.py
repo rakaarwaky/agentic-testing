@@ -1,5 +1,5 @@
 import logging
-from src.taxonomy.models import ITestHealer, TestResult, IFileSystem
+from src.taxonomy import ITestHealer, TestResult, IFileSystem
 from .healing_strategies import (
     FixStrategy,
     ImportErrorStrategy,

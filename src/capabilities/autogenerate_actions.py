@@ -1,6 +1,6 @@
 import os
 import logging
-from src.taxonomy.models import ITestGenerator, ICodeAnalyzer, IFileSystem
+from src.taxonomy import ITestGenerator, ICodeAnalyzer, IFileSystem
 import typing
 
 logger = logging.getLogger(__name__)

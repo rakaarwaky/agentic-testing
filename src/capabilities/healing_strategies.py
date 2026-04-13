@@ -8,7 +8,7 @@ import re
 import difflib
 import shutil
 from abc import ABC, abstractmethod
-from src.taxonomy.models import TestResult, IFileSystem
+from src.taxonomy import TestResult, IFileSystem
 
 logger = logging.getLogger(__name__)
 
