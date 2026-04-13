@@ -66,7 +66,7 @@ async def _send_command(
     }
 
     # Run in thread to avoid blocking
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _sync_socket_call, socket_path, request)
 
 

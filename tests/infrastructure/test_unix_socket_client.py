@@ -87,10 +87,10 @@ class TestSyncSocketCall:
     def test_sync_socket_call_success(self):
         response = {"stdout": "ok", "stderr": "", "returncode": 0}
         response_bytes = json.dumps(response).encode()
-        
+
         mock_socket = MagicMock()
         mock_socket.recv.side_effect = [response_bytes, b""]
-        
+
         with patch("socket.socket", return_value=mock_socket):
             result = _sync_socket_call("/tmp/test.sock", {"command": ["echo"]})
             assert result["returncode"] == 0
