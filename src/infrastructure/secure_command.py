@@ -14,6 +14,7 @@ from pathlib import Path
 
 
 BLOCKED_COMMANDS = {
+    "rm",
     "format",
     "mount",
     "umount",

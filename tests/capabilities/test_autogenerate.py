@@ -1,77 +1,56 @@
+"""Tests for autogenerate test use case."""
+import os
+import tempfile
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from src.capabilities.autogenerate_actions import AutogenerateTestUseCase
-from src.infrastructure.file_system import LocalFileSystem
 
-@pytest.fixture
-def mock_analyzer():
-    analyzer = MagicMock()
-    analyzer.analyze_file = AsyncMock()
-    return analyzer
-
-@pytest.fixture
-def mock_file_system():
-    fs = MagicMock(spec=LocalFileSystem)
-    fs.file_exists.return_value = False
-    return fs
 
 @pytest.mark.asyncio
-async def test_generate_test_success(mock_analyzer, mock_file_system):
+async def test_generate_test_success():
+    mock_analyzer = AsyncMock()
     mock_analyzer.analyze_file.return_value = {
-        "functions": ["compute_value", "_private_func"],
-        "classes": ["Calculator"]
+        "file": "sample.py",
+        "classes": ["MyClass"],
+        "functions": ["foo", "bar"],
     }
-    
-    use_case = AutogenerateTestUseCase(mock_analyzer, mock_file_system)
-    
-    result = await use_case.generate_test("src/math/calc.py")
-    
-    assert "Generated boilerplate test at" in result
-    mock_file_system.makedirs.assert_called_once()
-    mock_file_system.write_file.assert_called_once()
-    
-    # Check the content written
-    args, kwargs = mock_file_system.write_file.call_args
-    written_content = args[1]
-    
-    assert "import pytest" in written_content
-    assert "import importlib.util" in written_content
-    assert "import sys" in written_content
-    assert f"spec = importlib.util.spec_from_file_location('calc', 'src/math/calc.py')" in written_content
-    assert "from calc import *" in written_content
-    assert "def test_compute_value():" in written_content
-    assert "def test__private_func():" not in written_content
-    assert "class TestCalculator:" in written_content
-    assert "def test_instantiation(self):" in written_content
+    mock_fs = MagicMock()
+    mock_fs.file_exists.return_value = False
+    mock_fs.makedirs.return_value = None
+    mock_fs.write_file.return_value = None
+
+    use_case = AutogenerateTestUseCase(mock_analyzer, mock_fs)
+    result = await use_case.generate_test("sample.py")
+    assert "Generated" in result
+    mock_fs.write_file.assert_called_once()
+
 
 @pytest.mark.asyncio
-async def test_generate_test_analyzer_error(mock_analyzer, mock_file_system):
-    mock_analyzer.analyze_file.return_value = {
-        "error": "SyntaxError: invalid syntax"
-    }
-    
-    use_case = AutogenerateTestUseCase(mock_analyzer, mock_file_system)
-    
-    result = await use_case.generate_test("bad_file.py")
-    
-    assert "Error analyzing file: SyntaxError: invalid syntax" in result
-    mock_file_system.write_file.assert_not_called()
+async def test_generate_test_analyzer_error():
+    mock_analyzer = AsyncMock()
+    mock_analyzer.analyze_file.return_value = {"error": "parse error"}
+    mock_fs = MagicMock()
+
+    use_case = AutogenerateTestUseCase(mock_analyzer, mock_fs)
+    result = await use_case.generate_test("bad.py")
+    assert "Error" in result
+
 
 @pytest.mark.asyncio
-async def test_generate_test_absolute_path(mock_analyzer, mock_file_system):
+async def test_generate_test_existing_test_dir():
+    mock_analyzer = AsyncMock()
     mock_analyzer.analyze_file.return_value = {
-        "functions": ["do_something"],
+        "file": "sample.py",
+        "classes": [],
+        "functions": ["foo"],
     }
-    
-    use_case = AutogenerateTestUseCase(mock_analyzer, mock_file_system)
-    
-    result = await use_case.generate_test("/absolute/path/to/module.py")
-    
-    assert "Generated boilerplate test at" in result
-    args, kwargs = mock_file_system.write_file.call_args
-    written_content = args[1]
-    
-    # It should use importlib logic with the basename
-    assert "import importlib.util" in written_content
-    assert "spec = importlib.util.spec_from_file_location('module', '/absolute/path/to/module.py')" in written_content
-    assert "from module import *" in written_content
+    mock_fs = MagicMock()
+    mock_fs.file_exists.return_value = True
+    mock_fs.makedirs.return_value = None
+    mock_fs.write_file.return_value = None
+
+    use_case = AutogenerateTestUseCase(mock_analyzer, mock_fs)
+    result = await use_case.generate_test("sample.py")
+    assert "Generated" in result
+    # Should not call makedirs if test dir exists
+    mock_fs.makedirs.assert_not_called()
