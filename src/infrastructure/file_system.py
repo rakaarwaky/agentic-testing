@@ -26,7 +26,12 @@ class LocalFileSystem(IFileSystem):
         Fix #8: Prevents path traversal attacks by resolving to absolute path
         and verifying it's within the allowed base directory.
         """
-        resolved = Path(path).resolve()
+        p = Path(path)
+        # Resolve relative paths relative to allowed_base, not CWD
+        if not p.is_absolute():
+            resolved = (self.allowed_base / p).resolve()
+        else:
+            resolved = p.resolve()
         try:
             resolved.relative_to(self.allowed_base)
         except ValueError:

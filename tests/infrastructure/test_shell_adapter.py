@@ -11,7 +11,7 @@ async def test_pytest_runner_success():
     mock_proc.communicate.return_value = (b"PASSED", b"")
     mock_proc.returncode = 0
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is True
@@ -27,7 +27,7 @@ async def test_pytest_runner_assertion_error():
     mock_proc.communicate.return_value = (b"AssertionError: assert 1 == 2", b"")
     mock_proc.returncode = 1
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is False
@@ -42,7 +42,7 @@ async def test_pytest_runner_import_error():
     mock_proc.communicate.return_value = (b"ImportError: No module named x", b"")
     mock_proc.returncode = 1
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is False
@@ -60,7 +60,7 @@ async def test_pytest_runner_module_not_found_error():
     )
     mock_proc.returncode = 1
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is False
@@ -75,7 +75,7 @@ async def test_pytest_runner_unknown_error():
     mock_proc.communicate.return_value = (b"Some weird error", b"")
     mock_proc.returncode = 1
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is False
@@ -90,7 +90,7 @@ async def test_pytest_runner_assertion_error_parsing_single_quotes():
     mock_proc.communicate.return_value = (output, b"")
     mock_proc.returncode = 1
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is False
@@ -108,7 +108,7 @@ async def test_pytest_runner_assertion_error_parsing_double_quotes():
     mock_proc.communicate.return_value = (output, b"")
     mock_proc.returncode = 1
 
-    with patch("asyncio.create_subprocess_shell", return_value=mock_proc):
+    with patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = await runner.run_test("test_file.py")
 
         assert result.passed is False
