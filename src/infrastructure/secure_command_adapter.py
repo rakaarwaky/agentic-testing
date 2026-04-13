@@ -7,6 +7,7 @@ This module provides security by:
 3. Providing audit logging hooks
 """
 
+from typing import Any
 import os
 import subprocess
 
@@ -49,7 +50,7 @@ def is_command_safe(command: list[str]) -> tuple[bool, str]:
 
 async def execute_command_secure(
     command: list[str], working_dir: str | None = None, timeout: int = 300
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """
     Execute command with security validation.
 

@@ -142,7 +142,7 @@ def test_heal_applied_custom_timestamp():
     assert event.timestamp == "2025-03-15T12:00:00Z"
 
 
-def test_test_run_started_custom_timestamp():
+def test_test_run_started_custom_timestamp_post_init():
     """Preserves custom timestamp for TestRunStarted (exits __post_init__ early)."""
     event = TestRunStarted(path="/test.py", timestamp="2025-04-20T10:00:00Z")
     assert event.timestamp == "2025-04-20T10:00:00Z"

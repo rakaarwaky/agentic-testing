@@ -5,6 +5,7 @@ agentic-testing mendelegasikan command execution ke DesktopCommander
 tanpa AI agent mengetahui hal ini.
 """
 
+from typing import Any
 import subprocess
 import os
 
@@ -21,7 +22,7 @@ DESKTOP_COMMANDER_SCRIPT = os.environ.get(
 
 async def execute_via_desktop_commander(
     command: list[str], working_dir: str | None = None, timeout: int = 300
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """
     Execute command transparan via DesktopCommander.
 
@@ -39,7 +40,7 @@ async def execute_via_desktop_commander(
 
 async def _execute_with_security(
     command: list[str], working_dir: str | None = None, timeout: int = 300
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """Execute dengan security dari DesktopCommander config."""
 
     BLOCKED = {

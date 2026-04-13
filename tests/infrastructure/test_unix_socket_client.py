@@ -2,7 +2,7 @@
 import json
 import socket
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, MagicMock
 from src.infrastructure.unix_socket_client import (
     execute_via_unix_socket,
     is_socket_available,
@@ -49,22 +49,27 @@ class TestExecuteViaUnixSocket:
     @pytest.mark.asyncio
     async def test_command_timeout(self):
         with patch("os.path.exists", return_value=True):
-            with patch("src.infrastructure.unix_socket_client._send_command", new_callable=AsyncMock, return_value={}):
-                with patch("asyncio.wait_for", side_effect=TimeoutError("timeout")):
-                    result = await execute_via_unix_socket(["echo", "test"], timeout=1)
-                    assert result["returncode"] == 124
-                    assert "timed out" in result["stderr"]
+            with patch("asyncio.wait_for", side_effect=TimeoutError("timeout")):
+                result = await execute_via_unix_socket(["echo", "test"], timeout=1)
+                assert result["returncode"] == 124
+                assert "timed out" in result["stderr"]
 
     @pytest.mark.asyncio
     async def test_socket_error(self):
         async def raise_error(coro, *args, **kwargs):
-            if hasattr(coro, 'close'):
+            # Properly close the coroutine to suppress warnings
+            try:
                 coro.close()
+            except Exception:
+                pass
             raise Exception("connection error")
 
         with patch("os.path.exists", return_value=True):
             with patch("asyncio.wait_for", new=raise_error):
-                result = await execute_via_unix_socket(["echo", "test"])
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    result = await execute_via_unix_socket(["echo", "test"])
                 assert result["returncode"] == 1
                 assert "error" in result["stderr"].lower()
 
@@ -72,11 +77,10 @@ class TestExecuteViaUnixSocket:
     async def test_execute_success(self):
         expected = {"stdout": "hello", "stderr": "", "returncode": 0}
         with patch("os.path.exists", return_value=True):
-            with patch("src.infrastructure.unix_socket_client._send_command", new_callable=AsyncMock, return_value=expected):
-                with patch("asyncio.wait_for", return_value=expected):
-                    result = await execute_via_unix_socket(["echo", "hello"])
-                    assert result["returncode"] == 0
-                    assert result["stdout"] == "hello"
+            with patch("asyncio.wait_for", return_value=expected):
+                result = await execute_via_unix_socket(["echo", "hello"])
+                assert result["returncode"] == 0
+                assert result["stdout"] == "hello"
 
 
 class TestSyncSocketCall:

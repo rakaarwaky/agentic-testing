@@ -188,9 +188,12 @@ class AssertionErrorStrategy(FixStrategy):
         return self._fix_legacy(result)
 
     def _fix_with_line(self, result: TestResult) -> bool:
+        failure = result.failure
+        if failure is None or failure.line_number is None:
+            return False
         target_file = result.target
-        line_no = result.failure.line_number
-        msg = result.failure.message or ""
+        line_no = failure.line_number
+        msg = failure.message or ""
         try:
             match = self._parse_assertion(msg)
             if not match:

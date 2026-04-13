@@ -204,6 +204,13 @@ class TestAssertionErrorStrategy:
         result = TestResult(target="t.py", passed=False, output_log="", error_type="AssertionError", failure=failure)
         assert s.apply_fix(result) is False
 
+    def test_fix_with_line_no_failure(self):
+        """Test _fix_with_line returns False when failure is None (line 193)."""
+        fs = MagicMock()
+        s = AssertionErrorStrategy(fs)
+        result = TestResult(target="t.py", passed=False, output_log="")
+        assert s._fix_with_line(result) is False
+
     def test_fix_legacy_exception(self):
         """Test _fix_legacy exception handling (lines 246-248)."""
         fs = MagicMock()
