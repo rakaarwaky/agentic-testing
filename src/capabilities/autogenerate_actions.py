@@ -60,7 +60,7 @@ class AutogenerateTestUseCase(ITestGenerator):
 
         test_file_path = os.path.join(test_dir, f"test_{base_name}.py")
 
-        # Avoid overwriting existing tests unless forced? 
+        # Avoid overwriting existing tests unless forced?
         # For now, let's just write and return the path.
         self.file_system.write_file(test_file_path, "\n".join(test_content))
 
