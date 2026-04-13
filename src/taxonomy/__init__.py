@@ -47,7 +47,7 @@ from .test_result_entity import (
 )
 
 # -- Interfaces --
-from .test_interfaces import (
+from .test_interface_vo import (
     ITestRunner as ITestRunner,
     ITestHealer as ITestHealer,
     ICodeAnalyzer as ICodeAnalyzer,

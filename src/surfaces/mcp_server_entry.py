@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
-from .mcp_tools import register_tools
-from ..agent.container import get_container
+from .mcp_tools_registry import register_tools
+from ..agent.dependency_injection_container import get_container
 
 
 def main():

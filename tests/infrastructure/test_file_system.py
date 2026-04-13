@@ -2,7 +2,7 @@
 import os
 import tempfile
 import shutil
-from src.infrastructure.file_system import LocalFileSystem
+from src.infrastructure.file_system_provider import LocalFileSystem
 
 
 def _make_fs():
@@ -53,5 +53,26 @@ def test_read_write_lines():
         lines = ["line1\n", "line2\n"]
         fs.write_lines("test.txt", lines)
         assert fs.read_lines("test.txt") == lines
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def test_path_traversal_rejected():
+    """Test that paths outside allowed directory are rejected."""
+    from src.infrastructure.file_system_provider import PathValidationError
+    import pytest
+    fs, td = _make_fs()
+    try:
+        with pytest.raises(PathValidationError, match="outside allowed directory"):
+            fs.read_file("/etc/passwd")
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def test_file_exists_outside_allowed():
+    """Test file_exists returns False for paths outside allowed directory."""
+    fs, td = _make_fs()
+    try:
+        assert fs.file_exists("/etc/passwd") is False
     finally:
         shutil.rmtree(td, ignore_errors=True)

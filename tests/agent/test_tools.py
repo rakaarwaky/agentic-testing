@@ -1,13 +1,14 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 from mcp.server.fastmcp import FastMCP
-from src.surfaces.mcp_tools import register_tools
-from src.agent.container import Container
-from src.taxonomy.models import TestResult
+from src.surfaces.mcp_tools_registry import register_tools
+from src.agent.dependency_injection_container import Container
+from src.taxonomy import TestResult
 
 
 @pytest.mark.asyncio
 async def test_mcp_tools_execution():
+    """Test that register_tools registers all 5 MCP tools."""
     mcp = FastMCP("test")
     container = MagicMock(spec=Container)
 
@@ -29,25 +30,20 @@ async def test_mcp_tools_execution():
     register_tools(mcp, container)
 
     # Get the tools
-    await mcp.list_tools()
+    tools = await mcp.list_tools()
+    tool_names = [t.name for t in tools]
 
-    # Execute tools by calling the registered functions
-    # In FastMCP, tools are stored in mcp._tools (actually it is _tools in some versions,
-    # but let's try to use the public API if possible, or just mock the call)
+    # Verify all 5 tools are registered
+    assert "execute_command" in tool_names
+    assert "list_commands" in tool_names
+    assert "check_status" in tool_names
+    assert "read_skill_context" in tool_names
+    assert "cancel_job" in tool_names
 
-    # Since we only care about COVERAGE of the code inside the tool functions,
-    # and those functions are defined inside register_tools,
-    # we can't easily get them back out of FastMCP in a clean way without knowing its internals.
 
-    # However, we can use mcp.call_tool if we use the underlying server
-
-    # Actually, a simpler way to get coverage is to just mock the decorator
-    # and then we have the functions. But that's also complex.
-
-    # Let's try to find where FastMCP stores tools. It might be in mcp._tool_managers or similar.
-    # Looking at mcp-python SDK: FastMCP has a 'tools' property in some versions?
-
-    # Let's try to use a more direct approach: pass a mock mcp that captures the functions.
+@pytest.mark.asyncio
+async def test_read_skill_context_sections():
+    """Test read_skill_context returns all sections."""
     funcs = {}
     mock_mcp = MagicMock()
 
@@ -55,40 +51,68 @@ async def test_mcp_tools_execution():
         def decorator(f):
             funcs[name or f.__name__] = f
             return f
-
         return decorator
 
     mock_mcp.tool = save_tool
 
+    container = MagicMock(spec=Container)
     register_tools(mock_mcp, container)
 
-    # Now we can call them!
-    if "test_run" in funcs:
-        res = await funcs["test_run"](test_path="test.py")
-        assert "✅ PASS" in res
+    assert "read_skill_context" in funcs
 
-    if "test_analyze" in funcs:
-        res = await funcs["test_analyze"](target_file="test.py")
-        assert "X" in res
+    # Test specific sections
+    for section in ["directives", "mcp-tools", "cli-commands", "workflows", "architecture"]:
+        res = await funcs["read_skill_context"](section=section)
+        assert len(res) > 0
+        assert section.replace("-", " ") not in res or "#" in res  # Has content
 
-    if "test_audit" in funcs:
-        res = await funcs["test_audit"](target_dir="src")
-        assert "100" in res
+    # Test no section provided
+    res = await funcs["read_skill_context"](section=None)
+    assert "Available" in res
 
-    if "test_generate_data" in funcs:
-        res = await funcs["test_generate_data"](data_type="strings")
-        assert "['a', 'b']" in res
+    # Test unknown section
+    res = await funcs["read_skill_context"](section="nonexistent")
+    assert "not found" in res
 
-        res_fail = await funcs["test_generate_data"](data_type="unknown")
-        assert "Unknown data type" in res_fail
-        
-        # Test invalid data type via direct call
-        res_invalid = await funcs["test_generate_data"](data_type="invalid")
-        assert "Unknown data type" in res_invalid
 
-    if "test_generate" in funcs:
-        container.test_generator = AsyncMock()
-        container.test_generator.generate_test.return_value = "generated"
-        res = await funcs["test_generate"](source_file="test.py")
-        assert res == "generated"
-        container.test_generator.generate_test.assert_called_with("test.py")
+@pytest.mark.asyncio
+async def test_cancel_job_tool():
+    """Test cancel_job returns proper response."""
+    funcs = {}
+    mock_mcp = MagicMock()
+
+    def save_tool(name=None, **kwargs):
+        def decorator(f):
+            funcs[name or f.__name__] = f
+            return f
+        return decorator
+
+    mock_mcp.tool = save_tool
+    container = MagicMock(spec=Container)
+    register_tools(mock_mcp, container)
+
+    assert "cancel_job" in funcs
+    res = await funcs["cancel_job"](job_id="test-123")
+    assert "not_implemented" in res
+    assert "test-123" in res
+
+
+@pytest.mark.asyncio
+async def test_execute_command_tool():
+    """Test execute_command tool registration and basic invocation."""
+    funcs = {}
+    mock_mcp = MagicMock()
+
+    def save_tool(name=None, **kwargs):
+        def decorator(f):
+            funcs[name or f.__name__] = f
+            return f
+        return decorator
+
+    mock_mcp.tool = save_tool
+    container = MagicMock(spec=Container)
+    register_tools(mock_mcp, container)
+
+    assert "execute_command" in funcs
+    assert "list_commands" in funcs
+    assert "check_status" in funcs

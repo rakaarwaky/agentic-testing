@@ -1,8 +1,7 @@
 """test_result_entity — Test domain entities and interfaces."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
-from abc import ABC, abstractmethod
 
 
 @dataclass
@@ -32,87 +31,22 @@ class TestResult:
 
     @property
     def position(self) -> str:
+        """Return target:line if failure has line number, else just target."""
         if self.failure and self.failure.line_number:
             return f"{self.target}:{self.failure.line_number}"
         return self.target
 
     @property
     def error_code(self) -> str:
+        """Return error type or 'UNKNOWN' as string identifier."""
         return self.error_type or "UNKNOWN"
 
     @property
     def identity(self) -> str:
+        """Return unique identity string: target:error_type or target:pass."""
         return f"{self.target}:{self.error_type or 'pass'}"
 
     def mark_healed(self, attempts: int):
         """Mark this result as healed after retry."""
         self.healed = True
         self.healing_attempts = attempts
-
-
-class ITestRunner(ABC):
-    """Interface for test execution."""
-
-    @abstractmethod
-    async def run_test(self, test_path: str) -> TestResult:
-        ...
-
-
-class ITestHealer(ABC):
-    """Interface for test healing."""
-
-    @abstractmethod
-    async def attempt_fix(self, result: TestResult) -> bool:
-        ...
-
-
-class ICodeAnalyzer(ABC):
-    """Interface for code analysis."""
-
-    @abstractmethod
-    async def analyze_file(self, file_path: str) -> dict:
-        ...
-
-
-class IQualityAuditor(ABC):
-    """Interface for coverage auditing."""
-
-    @abstractmethod
-    async def check_coverage(self, target_dir: str) -> dict:
-        ...
-
-
-class ITestGenerator(ABC):
-    """Interface for test generation."""
-
-    @abstractmethod
-    async def generate_test(self, source_file: str) -> str:
-        ...
-
-
-class IFileSystem(ABC):
-    """Interface for file system operations."""
-
-    @abstractmethod
-    def read_file(self, path: str) -> str:
-        ...
-
-    @abstractmethod
-    def write_file(self, path: str, content: str) -> None:
-        ...
-
-    @abstractmethod
-    def file_exists(self, path: str) -> bool:
-        ...
-
-    @abstractmethod
-    def read_lines(self, path: str) -> list[str]:
-        ...
-
-    @abstractmethod
-    def write_lines(self, path: str, lines: list[str]) -> None:
-        ...
-
-    @abstractmethod
-    def makedirs(self, path: str, exist_ok: bool = True) -> None:
-        ...

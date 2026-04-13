@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock
 from src.capabilities.autonomous_testing_actions import RunTestWithHealingUseCase
-from src.taxonomy.models import TestResult
+from src.taxonomy import TestResult
 
 
 @pytest.mark.asyncio

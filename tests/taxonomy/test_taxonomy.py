@@ -1,4 +1,4 @@
-from src.taxonomy.errors import (
+from src.taxonomy import (
     AgenticTestingError,
     InfrastructureError,
     AnalysisError,

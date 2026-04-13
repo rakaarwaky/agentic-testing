@@ -1,5 +1,4 @@
 """Tests for synthetic data generation."""
-import pytest
 from src.capabilities.synthetic_data_actions import SimpleDataGenerator
 
 

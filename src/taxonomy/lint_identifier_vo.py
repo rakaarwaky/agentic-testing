@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 class TestName(BaseModel):
     """Test identifier."""
+    __test__ = False  # Not a pytest test class
     model_config = ConfigDict(frozen=True)
 
     value: str

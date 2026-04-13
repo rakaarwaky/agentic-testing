@@ -1,6 +1,6 @@
 import logging
 from src.taxonomy import ITestHealer, TestResult, IFileSystem
-from .healing_strategies import (
+from .test_healing_actions import (
     FixStrategy,
     ImportErrorStrategy,
     AttributeErrorStrategy,

@@ -35,16 +35,21 @@ Homepage = "https://github.com/rakaarwaky/agentic-testing"
 Issues = "https://github.com/rakaarwaky/agentic-testing/issues"
 
 [project.scripts]
-agentic-testing = "src.surfaces.mcp.server:main"
-agentic-test = "src.surfaces.cli.main:cli"
+agentic-testing = "src.surfaces.mcp_server_entry:main"
+agentic-test = "src.surfaces.cli_main_entry:cli"
 
 [tool.pyre]
 source_directories = ["src"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-python_classes = "Test* !TestResult"
+python_classes = "Test* !TestResult !TestName"
 python_files = ["test_*.py", "*_test_*.py", "*_test.py"]
+filterwarnings = [
+    "ignore::RuntimeWarning:unittest.mock",
+    "ignore::ResourceWarning:asyncio",
+    "ignore:coroutine.*never awaited:RuntimeWarning",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]

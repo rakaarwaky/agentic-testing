@@ -2,10 +2,9 @@
 import os
 import tempfile
 import pytest
-from unittest.mock import patch, MagicMock
-from src.capabilities.autonomous_testing_healer import HeuristicHealer
-from src.taxonomy.models import TestResult, FailureMetadata
-from src.infrastructure.file_system import LocalFileSystem
+from src.capabilities.autonomous_testing_healing_adapter import HeuristicHealer
+from src.taxonomy import TestResult, FailureMetadata
+from src.infrastructure.file_system_provider import LocalFileSystem
 
 
 def _make_fs(allowed_base=None):

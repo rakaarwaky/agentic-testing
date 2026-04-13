@@ -6,7 +6,6 @@ actual command execution to DesktopCommander.
 """
 
 import os
-import json
 from typing import Any
 
 
@@ -29,7 +28,7 @@ async def execute_via_desktop_commander_mcp(
 
     if not use_mcp:
         # Fallback to direct execution with security
-        from .secure_command import execute_command_secure
+        from .secure_command_adapter import execute_command_secure
 
         return await execute_command_secure(command, working_dir, timeout)
 
@@ -58,13 +57,13 @@ async def execute_via_desktop_commander_mcp(
             }
         else:
             # Fallback
-            from .secure_command import execute_command_secure
+            from .secure_command_adapter import execute_command_secure
 
             return await execute_command_secure(command, working_dir, timeout)
 
-    except Exception as e:
+    except Exception:
         # Fallback on any error
-        from .secure_command import execute_command_secure
+        from .secure_command_adapter import execute_command_secure
 
         return await execute_command_secure(command, working_dir, timeout)
 
@@ -79,5 +78,5 @@ async def is_desktop_commander_available() -> bool:
                 DESKTOP_COMMANDER_URL, json={"command": ["echo", "test"], "timeout": 5}
             )
             return response.status_code == 200
-    except:
+    except Exception:
         return False

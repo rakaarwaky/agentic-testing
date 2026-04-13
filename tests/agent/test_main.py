@@ -1,12 +1,12 @@
 import pytest
 from unittest.mock import patch
-from src.surfaces.mcp_server import main
+from src.surfaces.mcp_server_entry import main
 
 
 def test_main_execution():
-    with patch("src.surfaces.mcp_server.FastMCP") as mock_fastmcp:
-        with patch("src.surfaces.mcp_server.get_container") as mock_get_container:
-            with patch("src.surfaces.mcp_server.register_tools") as mock_register_tools:
+    with patch("src.surfaces.mcp_server_entry.FastMCP") as mock_fastmcp:
+        with patch("src.surfaces.mcp_server_entry.get_container") as mock_get_container:
+            with patch("src.surfaces.mcp_server_entry.register_tools") as mock_register_tools:
                 mock_instance = mock_fastmcp.return_value
 
                 main()
@@ -25,7 +25,7 @@ def test_main_block():
     from mcp.server.fastmcp import FastMCP
 
     with patch.object(FastMCP, "run"):
-        with patch("src.surfaces.mcp_server.register_tools"):
-            with patch("src.surfaces.mcp_server.get_container"):
-                runpy.run_module("src.surfaces.mcp_server", run_name="__main__")
+        with patch("src.surfaces.mcp_server_entry.register_tools"):
+            with patch("src.surfaces.mcp_server_entry.get_container"):
+                runpy.run_module("src.surfaces.mcp_server_entry", run_name="__main__")
                 # If we reached here without error, it called main()

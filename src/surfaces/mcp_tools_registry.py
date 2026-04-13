@@ -10,8 +10,8 @@ import os
 import json
 from pydantic import Field
 from mcp.server.fastmcp import FastMCP
-from ..agent.container import Container
-from ..infrastructure.secure_command import is_command_safe, is_server_healthy
+from ..agent.dependency_injection_container import Container
+from ..infrastructure.secure_command_adapter import is_command_safe
 from ..infrastructure.unix_socket_client import (
     execute_via_unix_socket,
     is_socket_available,
@@ -198,7 +198,7 @@ def register_tools(mcp: FastMCP, container: Container):
                 "workflow": ["workflow"],
                 "utility": ["version", "init"],
             }
-            if domain.lower() in domain_keywords:
+            if isinstance(domain, str) and domain.lower() in domain_keywords:
                 lines = output.split("\n")
                 filtered = []
                 for line in lines:
@@ -380,7 +380,7 @@ AI Agent → 5 Core MCP Tools → 11+ CLI Commands → SKILL.md Context
 """,
         }
 
-        if section and section.lower() in sections:
+        if isinstance(section, str) and section.lower() in sections:
             return sections[section.lower()]
         elif section:
             return f"Section '{section}' not found. Available: {', '.join(sections.keys())}"

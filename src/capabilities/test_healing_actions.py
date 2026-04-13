@@ -22,12 +22,12 @@ class FixStrategy(ABC):
     @abstractmethod
     def can_fix(self, result: TestResult) -> bool:
         """Check if this strategy can fix the given error."""
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def apply_fix(self, result: TestResult) -> bool:
         """Apply the fix. Returns True if successful."""
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def _create_backup(self, file_path: str) -> str | None:
         """Create backup before modifying a file."""

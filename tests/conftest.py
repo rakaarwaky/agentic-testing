@@ -19,7 +19,7 @@ def mock_file_system():
 @pytest.fixture
 def mock_healer(mock_file_system):
     """Mock healer for testing."""
-    from src.capabilities.healing_strategies import (
+    from src.capabilities.test_healing_actions import (
         ImportErrorStrategy,
         AttributeErrorStrategy,
         TypeErrorStrategy,

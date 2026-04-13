@@ -11,6 +11,11 @@ class PytestRunner(ITestRunner):
         pass
 
     async def run_test(self, test_path: str) -> TestResult:
+        """Execute pytest on the given test path and return structured result.
+
+        Uses subprocess.exec (not shell) to prevent injection attacks.
+        Parses pytest output to extract error types, line numbers, and messages.
+        """
         import sys
 
         # Fix #3: Use create_subprocess_exec instead of create_subprocess_shell
@@ -39,7 +44,7 @@ class PytestRunner(ITestRunner):
             # Use re.escape to handle special regex characters in filenames
             line_match = re.search(rf"{re.escape(base_name)}:(\d+):", output)
             line_number = int(line_match.group(1)) if line_match else None
-            
+
             # Extract error type and message
             # Matches E       AssertionError: ... or E  ImportError: ...
             error_match = re.search(r"E\s+([a-zA-Z]+Error):?\s+(.*)", output)

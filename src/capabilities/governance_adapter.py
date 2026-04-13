@@ -33,10 +33,10 @@ class GovernanceViolation:
     @property
     def message(self) -> str:
         return (
-            f"[AES Layer Violation] {description}. "
+            f"[AES Layer Violation] {self.description}. "
             f"File in '{self.source_layer}' imports from '{self.target_layer}' "
             f"via '{self.module_path}'."
-        ).replace("{description}", self.description)
+        )
 
     @property
     def severity(self) -> str:

@@ -4,11 +4,10 @@
 import asyncio
 import click
 import json
-import os
 import re
 import sys
 from pathlib import Path
-from ..agent.container import get_container
+from ..agent.dependency_injection_container import get_container
 
 
 @click.group()
@@ -16,7 +15,7 @@ from ..agent.container import get_container
 @click.pass_context
 def cli(ctx):
     """Agentic Testing CLI: Autonomous Unit Testing with Self-Healing.
-    
+
     Run tests, analyze code, audit coverage, and generate test data.
     """
     ctx.ensure_object(dict)
@@ -35,14 +34,14 @@ def cli(ctx):
 @click.pass_context
 def run_test(ctx, test_path, heal, max_retries, format):
     """Run tests with optional self-healing.
-    
+
     Example: agentic-test run tests/test_parser.py --heal --max-retries 3
     """
     container = ctx.obj['container']
-    
+
     async def _run():
         result = await container.test_use_case.execute(test_path, max_retries if heal else 0)
-        
+
         if format == 'json':
             click.echo(json.dumps({
                 'passed': result.passed,
@@ -58,7 +57,7 @@ def run_test(ctx, test_path, heal, max_retries, format):
             click.echo(f"Target: {result.target}")
             click.echo("\nOutput Log:")
             click.echo(result.output_log)
-    
+
     asyncio.run(_run())
 
 
@@ -68,14 +67,14 @@ def run_test(ctx, test_path, heal, max_retries, format):
 @click.pass_context
 def analyze_file(ctx, target_file, format):
     """AST analysis of source file.
-    
+
     Returns classes, functions, and complexity score.
     """
     container = ctx.obj['container']
-    
+
     async def _analyze():
         result = await container.analyzer.analyze_file(target_file)
-        
+
         if format == 'json':
             click.echo(json.dumps(result, indent=2))
         else:
@@ -83,7 +82,7 @@ def analyze_file(ctx, target_file, format):
             click.echo(f"Classes: {', '.join(result.get('classes', []))}")
             click.echo(f"Functions: {', '.join(result.get('functions', []))}")
             click.echo(f"Complexity Score: {result.get('complexity_score', 'N/A')}")
-    
+
     asyncio.run(_analyze())
 
 
@@ -94,14 +93,14 @@ def analyze_file(ctx, target_file, format):
 @click.pass_context
 def audit_coverage(ctx, target_dir, threshold, format):
     """Coverage audit.
-    
+
     Fails if coverage < threshold.
     """
     container = ctx.obj['container']
-    
+
     async def _audit():
         result = await container.auditor.check_coverage(target_dir)
-        
+
         if format == 'json':
             click.echo(json.dumps(result, indent=2))
         else:
@@ -112,10 +111,10 @@ def audit_coverage(ctx, target_dir, threshold, format):
                 status = "✅ PASS" if coverage >= threshold else "❌ FAIL"
                 click.echo(f"{status} Coverage: {coverage}% (threshold: {threshold}%)")
                 click.echo(result.get('summary', ''))
-                
+
                 if coverage < threshold:
                     sys.exit(1)
-    
+
     asyncio.run(_audit())
 
 
@@ -125,15 +124,15 @@ def audit_coverage(ctx, target_dir, threshold, format):
 @click.pass_context
 def generate_test(ctx, source_file, output):
     """Generate boilerplate tests.
-    
+
     Creates skeleton test file based on AST analysis.
     """
     container = ctx.obj['container']
-    
+
     async def _generate():
         result = await container.test_generator.generate_test(source_file)
         click.echo(result)
-    
+
     asyncio.run(_generate())
 
 
@@ -148,11 +147,11 @@ def generate_test(ctx, source_file, output):
 @click.pass_context
 def generate_data(ctx, data_type, count, format):
     """Generate synthetic test data.
-    
+
     Types: strings, numbers, json, dates, emails, all
     """
     container = ctx.obj['container']
-    
+
     async def _generate():
         generators = {
             'strings': lambda: container.generator.generate_strings(count),
@@ -162,14 +161,14 @@ def generate_data(ctx, data_type, count, format):
             'emails': lambda: container.generator.generate_emails(count),
             'all': lambda: container.generator.generate_all(),
         }
-        
+
         result = generators.get(data_type, lambda: {})()
-        
+
         if format == 'json':
             click.echo(json.dumps(result, indent=2))
         else:
             click.echo(result)
-    
+
     asyncio.run(_generate())
 
 
@@ -183,14 +182,14 @@ def generate_data(ctx, data_type, count, format):
 @click.pass_context
 def migrate_test(ctx, test_path, backup):
     """Migrate unittest to pytest.
-    
+
     Converts:
     - unittest.TestCase → plain class
     - self.assertEqual() → assert
     - self.assertTrue() → assert
     """
     container = ctx.obj['container']
-    
+
     try:
         content = container.file_system.read_file(test_path)
 
@@ -215,7 +214,7 @@ def migrate_test(ctx, test_path, backup):
 
         container.file_system.write_file(test_path, new_content)
         click.echo(f"✅ Migrated {test_path} to pytest-style")
-        
+
     except Exception as e:
         click.echo(f"❌ Migration failed: {str(e)}", err=True)
         sys.exit(1)
@@ -232,11 +231,11 @@ def migrate_test(ctx, test_path, backup):
 @click.pass_context
 def find_slow_tests(ctx, target_dir, threshold, top):
     """Find slow tests.
-    
+
     Uses pytest --durations to identify bottlenecks.
     """
     import subprocess
-    
+
     cmd = [
         sys.executable, '-m', 'pytest',
         target_dir,
@@ -244,7 +243,7 @@ def find_slow_tests(ctx, target_dir, threshold, top):
         f'--durations-min={threshold}',
         '-v'
     ]
-    
+
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         click.echo(result.stdout)
@@ -265,18 +264,18 @@ def find_slow_tests(ctx, target_dir, threshold, top):
 @click.pass_context
 def mock_generate(ctx, function_signature, output):
     """Generate mock from signature.
-    
+
     Example: agentic-test mock-generate "def get_user(id: int) -> User"
     """
     import re
-    
+
     match = re.search(r'def\s+(\w+)\((.*)\)', function_signature)
     if not match:
         click.echo("❌ Invalid signature. Example: 'def my_func(a, b)'", err=True)
         sys.exit(1)
-    
+
     name, args = match.groups()
-    
+
     mock_code = f"""from unittest.mock import Mock
 
 # Mock for {name}({args})
@@ -287,7 +286,7 @@ mock_{name}.return_value = None
 # result = mock_{name}({args.split(',')[0] if args else ''})
 # assert result is None
 """
-    
+
     if output:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
         Path(output).write_text(mock_code)
@@ -308,47 +307,47 @@ mock_{name}.return_value = None
 @click.pass_context
 def run_workflow(ctx, workflow, target, threshold, max_retries):
     """Run pre-defined workflows.
-    
+
     Workflows:
     - test-and-fix: Run tests, auto-heal, verify
     - coverage-gate: Ensure coverage threshold
     - full-suite: Run all tests with healing
     """
     container = ctx.obj['container']
-    
+
     async def _run_workflow():
         if workflow == 'test-and-fix':
             click.echo("🔄 Running test-and-fix workflow...")
-            
+
             # Step 1: Run with healing
             result = await container.test_use_case.execute(target, max_retries)
             click.echo(f"Step 1: {'✅ PASS' if result.passed else '❌ FAIL'}")
-            
+
             # Step 2: If failed, analyze
             if not result.passed:
                 click.echo("Step 2: Analyzing failures...")
                 # Analysis would go here
-            
+
             # Step 3: Re-run without healing to verify
             final = await container.test_use_case.execute(target, 0)
             click.echo(f"Step 3: Final status: {'✅ PASS' if final.passed else '❌ FAIL'}")
-            
+
         elif workflow == 'coverage-gate':
             click.echo("🚪 Running coverage gate...")
             result = await container.auditor.check_coverage(target)
             coverage = result.get('total_pct', 0)
-            
+
             if coverage >= threshold:
                 click.echo(f"✅ PASS: Coverage {coverage}% >= {threshold}%")
             else:
                 click.echo(f"❌ FAIL: Coverage {coverage}% < {threshold}%")
                 sys.exit(1)
-                
+
         elif workflow == 'full-suite':
             click.echo("🏃 Running full test suite...")
             # Would iterate over all test files
             click.echo("Full suite workflow - coming soon")
-    
+
     asyncio.run(_run_workflow())
 
 
@@ -380,11 +379,11 @@ def init_config(ctx, config_path):
             "test_directory": "tests",
         }
     }
-    
+
     Path(config_path).parent.mkdir(parents=True, exist_ok=True)
     Path(config_path).write_text(json.dumps(config, indent=2))
     click.echo(f"✅ Configuration initialized at {config_path}")
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     cli()

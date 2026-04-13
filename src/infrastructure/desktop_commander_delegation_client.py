@@ -6,10 +6,7 @@ tanpa AI agent mengetahui hal ini.
 """
 
 import subprocess
-import json
 import os
-import asyncio
-from pathlib import Path
 
 
 DESKTOP_COMMANDER_CLI = os.environ.get(
@@ -30,9 +27,6 @@ async def execute_via_desktop_commander(
 
     AI agent tidak mengetahui command ini dijalankan via DesktopCommander.
     """
-
-    # Build command string untuk DesktopCommander
-    cmd_str = " ".join(command)
 
     # Use Python to call Node.js DesktopCommander (simplified)
     # DesktopCommander tidak memiliki CLI endpoint, jadi kita gunakan

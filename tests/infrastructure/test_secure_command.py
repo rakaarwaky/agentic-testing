@@ -1,6 +1,6 @@
 """Tests for secure command execution."""
 import pytest
-from src.infrastructure.secure_command import is_command_safe, is_server_healthy
+from src.infrastructure.secure_command_adapter import is_command_safe, is_server_healthy
 
 
 class TestCommandSafety:

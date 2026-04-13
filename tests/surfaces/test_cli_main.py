@@ -2,7 +2,7 @@
 from click.testing import CliRunner
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from src.surfaces.cli_main import cli, run_test
+from src.surfaces.cli_main_entry import cli
 
 
 @pytest.fixture
@@ -12,9 +12,8 @@ def runner():
 
 @pytest.fixture
 def mock_container():
-    with patch("src.surfaces.cli_main.get_container") as mock:
+    with patch("src.surfaces.cli_main_entry.get_container") as mock:
         container = MagicMock()
-        mock_report = MagicMock()
         container.test_use_case.execute = AsyncMock(return_value=MagicMock(
             passed=True, target="test.py", healed=False, healing_attempts=0, output_log="OK"
         ))
@@ -159,3 +158,110 @@ class TestCliInit:
         assert result.exit_code == 0
         assert "initialized" in result.output.lower()
         assert config.exists()
+
+
+class TestCliMigrate:
+    def test_migrate_basic(self, runner, mock_container, tmp_path):
+        f = tmp_path / "test_old.py"
+        content = "import unittest\nclass TestFoo(unittest.TestCase):\n    def test_eq(self):\n        self.assertEqual(1, 1)\n"
+        f.write_text(content)
+        mock_container.file_system.read_file.return_value = content
+        result = runner.invoke(cli, ["migrate", str(f)])
+        assert result.exit_code == 0
+        assert "Migrated" in result.output
+
+    def test_migrate_with_backup(self, runner, mock_container, tmp_path):
+        f = tmp_path / "test_old.py"
+        content = "import unittest\nclass TestFoo(unittest.TestCase):\n    def test_true(self):\n        self.assertTrue(True)\n"
+        f.write_text(content)
+        mock_container.file_system.read_file.return_value = content
+        result = runner.invoke(cli, ["migrate", str(f), "--backup"])
+        assert result.exit_code == 0
+        assert "Backup created" in result.output
+
+    def test_migrate_error(self, runner, mock_container, tmp_path):
+        f = tmp_path / "test_err.py"
+        f.write_text("import unittest\n")
+        mock_container.file_system.read_file.side_effect = Exception("read error")
+        result = runner.invoke(cli, ["migrate", str(f)])
+        assert result.exit_code == 1
+        assert "Migration failed" in result.output
+
+
+class TestCliFindSlow:
+    def test_find_slow(self, runner):
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="slow test output\n", stderr="", returncode=0
+            )
+            result = runner.invoke(cli, ["find-slow", "."])
+            assert result.exit_code == 0
+            assert "slow test output" in result.output
+
+    def test_find_slow_error(self, runner):
+        with patch("subprocess.run", side_effect=Exception("subprocess error")):
+            result = runner.invoke(cli, ["find-slow", "."])
+            assert result.exit_code == 1
+            assert "Error" in result.output
+
+    def test_find_slow_stderr(self, runner):
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="out\n", stderr="warning\n", returncode=0
+            )
+            result = runner.invoke(cli, ["find-slow", "."])
+            assert result.exit_code == 0
+
+
+class TestCliMockGenerate:
+    def test_mock_generate_to_file(self, runner, tmp_path):
+        out = tmp_path / "mock_test.py"
+        result = runner.invoke(cli, ["mock-generate", "def get_user(id: int) -> User", "--output", str(out)])
+        assert result.exit_code == 0
+        assert "Mock saved" in result.output
+        assert out.exists()
+
+    def test_mock_generate_stdout(self, runner):
+        result = runner.invoke(cli, ["mock-generate", "def my_func(a, b)"])
+        assert result.exit_code == 0
+        assert "mock_my_func" in result.output
+
+    def test_mock_generate_invalid(self, runner):
+        result = runner.invoke(cli, ["mock-generate", "not a function"])
+        assert result.exit_code == 1
+        assert "Invalid signature" in result.output
+
+
+class TestCliWorkflow:
+    def test_workflow_coverage_gate_pass(self, runner, mock_container):
+        result = runner.invoke(cli, ["workflow", "coverage-gate", ".", "--threshold", "80"])
+        assert result.exit_code == 0
+        assert "PASS" in result.output
+
+    def test_workflow_coverage_gate_fail(self, runner, mock_container):
+        mock_container.auditor.check_coverage = AsyncMock(return_value={
+            "total_pct": 50.0, "summary": "Low"
+        })
+        result = runner.invoke(cli, ["workflow", "coverage-gate", ".", "--threshold", "80"])
+        assert result.exit_code == 1
+        assert "FAIL" in result.output
+
+    def test_workflow_test_and_fix(self, runner, mock_container):
+        mock_container.test_use_case.execute = AsyncMock(return_value=MagicMock(
+            passed=True, target="test.py", healed=False, healing_attempts=0, output_log="OK"
+        ))
+        result = runner.invoke(cli, ["workflow", "test-and-fix", "."])
+        assert result.exit_code == 0
+
+    def test_workflow_test_and_fix_failed(self, runner, mock_container):
+        mock_container.test_use_case.execute = AsyncMock(return_value=MagicMock(
+            passed=False, target="test.py", healed=False, healing_attempts=0, output_log="FAIL"
+        ))
+        result = runner.invoke(cli, ["workflow", "test-and-fix", "."])
+        assert result.exit_code == 0
+        assert "Analyzing failures" in result.output
+
+    def test_workflow_full_suite(self, runner, mock_container):
+        result = runner.invoke(cli, ["workflow", "full-suite", "."])
+        assert result.exit_code == 0
+        assert "coming soon" in result.output.lower() or "full suite" in result.output.lower()

@@ -14,6 +14,7 @@ class Severity(str, Enum):
 
     @property
     def score_impact(self) -> float:
+        """Return numeric impact on quality score based on severity level."""
         return _SEVERITY_IMPACT[self]
 
 
@@ -37,10 +38,12 @@ class ErrorCode(BaseModel):
 
     @property
     def is_test_error(self) -> bool:
+        """True if code starts with 'E' or 'F' (test failure codes)."""
         return self.code.startswith(("E", "F"))
 
     @property
     def is_import_error(self) -> bool:
+        """True if code starts with 'I' or 'M' (import error codes)."""
         return self.code.startswith(("I", "M"))
 
 
@@ -68,8 +71,10 @@ class Score(BaseModel):
 
     @property
     def is_passing(self) -> bool:
+        """True if score meets minimum threshold (>= 80.0)."""
         return self.value >= 80.0
 
     @property
     def is_perfect(self) -> bool:
+        """True if score is perfect (>= 100.0)."""
         return self.value >= 100.0

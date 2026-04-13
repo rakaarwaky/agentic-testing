@@ -1,13 +1,13 @@
 """test_event — Domain event types for agentic-testing."""
 
-from typing import Optional
 from datetime import datetime, timezone
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
 class TestRunStarted:
     """Test run began."""
+    __test__ = False
     path: str
     heal_enabled: bool = False
     max_retries: int = 0
@@ -21,6 +21,7 @@ class TestRunStarted:
 @dataclass
 class TestRunCompleted:
     """Test run finished."""
+    __test__ = False
     path: str
     passed: bool
     healed: bool = False
@@ -41,6 +42,7 @@ class TestRunCompleted:
 @dataclass
 class TestRunFailed:
     """Test run failed."""
+    __test__ = False
     path: str
     error_type: str
     error_message: str

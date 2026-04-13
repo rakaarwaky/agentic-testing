@@ -12,8 +12,8 @@ async def test_mcp_initialization():
 @pytest.mark.asyncio
 async def test_tool_registration():
     """Test that tools are registered correctly."""
-    from src.surfaces.mcp_tools import register_tools
-    from src.agent.container import Container
+    from src.surfaces.mcp_tools_registry import register_tools
+    from src.agent.dependency_injection_container import Container
 
     mcp = FastMCP("agentic-testing-test")
 

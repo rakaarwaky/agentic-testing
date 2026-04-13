@@ -166,3 +166,8 @@ cython_debug/
 
 # Ruff
 .ruff_cache/
+
+# Agent cycle temp directories
+_test_tmp/
+cycle_reports/
+cycle_state/

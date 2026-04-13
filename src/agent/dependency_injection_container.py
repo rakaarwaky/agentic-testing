@@ -1,5 +1,5 @@
-from .logging_setup import setup_logging
-from .wiring import wire_dependencies
+from .logging_manager import setup_logging
+from .dependency_wiring_container import wire_dependencies
 
 
 class Container:

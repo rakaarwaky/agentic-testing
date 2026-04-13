@@ -1,6 +1,5 @@
 """Tests for the DI container."""
-import pytest
-from src.agent.container import Container, get_container, reset_container
+from src.agent.dependency_injection_container import Container, get_container, reset_container
 
 
 def test_container_init():

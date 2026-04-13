@@ -33,12 +33,12 @@ def test_project_structure_integrity():
     """Verify all core components are in place."""
     # tests/autonomous_testing_e2e_test_server_e2e.py -> tests/.. -> project_root
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(current_dir, ".."))
+    project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
 
     required_paths = [
-        "src/capabilities/autonomous_testing_healer.py",
+        "src/capabilities/autonomous_testing_healing_adapter.py",
         "src/capabilities/autonomous_testing_actions.py",
-        "src/surfaces/mcp_tools.py",
+        "src/surfaces/mcp_tools_registry.py",
         "src/infrastructure/shell_adapter.py",
     ]
     for path in required_paths:

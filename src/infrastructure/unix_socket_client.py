@@ -89,7 +89,7 @@ def _sync_socket_call(socket_path: str, request: dict) -> dict[str, Any]:
                 data += chunk
                 # Try to parse to check if complete
                 try:
-                    result = json.loads(data.decode())
+                    json.loads(data.decode())
                     break
                 except json.JSONDecodeError:
                     continue

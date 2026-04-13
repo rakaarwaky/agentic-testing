@@ -9,8 +9,6 @@ This module provides security by:
 
 import os
 import subprocess
-import json
-from pathlib import Path
 
 
 BLOCKED_COMMANDS = {

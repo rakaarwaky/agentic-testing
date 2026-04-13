@@ -57,9 +57,9 @@ class AutogenerateTestUseCase(ITestGenerator):
             self.file_system.makedirs(test_dir)
         elif not os.path.isdir(test_dir):
             return f"Error: '{test_dir}' exists but is not a directory"
-        
+
         test_file_path = os.path.join(test_dir, f"test_{base_name}.py")
-        
+
         # Avoid overwriting existing tests unless forced? 
         # For now, let's just write and return the path.
         self.file_system.write_file(test_file_path, "\n".join(test_content))
