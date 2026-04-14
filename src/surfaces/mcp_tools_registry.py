@@ -29,7 +29,7 @@ def _get_execution_mode() -> str:
         return "direct"
 
 
-def register_tools(mcp: FastMCP, container: Container):
+def register_tools(mcp: FastMCP, container: Container) -> None:
     """Bridges Capabilities to the MCP Surface (Domain 5)."""
 
     # ─── Core Tool 1: execute_command ─────────────────────────────────────────

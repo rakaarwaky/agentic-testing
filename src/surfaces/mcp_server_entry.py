@@ -3,7 +3,7 @@ from .mcp_tools_registry import register_tools
 from ..agent.dependency_injection_container import get_container
 
 
-def main():
+def main() -> None:
     """Main entry point for Agentic Testing (AES Structure)."""
     mcp = FastMCP("Agentic Testing (AES)")
     container = get_container()

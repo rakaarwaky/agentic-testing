@@ -13,7 +13,7 @@ from ..agent.dependency_injection_container import get_container
 @click.group()
 @click.version_option(version='1.0.0', prog_name='agentic-test')
 @click.pass_context
-def cli(ctx):
+def cli(ctx: click.Context) -> None:
     """Agentic Testing CLI: Autonomous Unit Testing with Self-Healing.
 
     Run tests, analyze code, audit coverage, and generate test data.
@@ -32,7 +32,7 @@ def cli(ctx):
 @click.option('--max-retries', default=3, help='Max healing attempts')
 @click.option('--format', type=click.Choice(['text', 'json']), default='text', help='Output format')
 @click.pass_context
-def run_test(ctx, test_path, heal, max_retries, format):
+def run_test(ctx: click.Context, test_path: str, heal: bool, max_retries: int, format: str) -> None:
     """Run tests with optional self-healing.
 
     Example: agentic-test run tests/test_parser.py --heal --max-retries 3
@@ -65,7 +65,7 @@ def run_test(ctx, test_path, heal, max_retries, format):
 @click.argument('target_file', type=click.Path(exists=True))
 @click.option('--format', type=click.Choice(['text', 'json']), default='text')
 @click.pass_context
-def analyze_file(ctx, target_file, format):
+def analyze_file(ctx: click.Context, target_file: str, format: str) -> None:
     """AST analysis of source file.
 
     Returns classes, functions, and complexity score.
@@ -91,7 +91,7 @@ def analyze_file(ctx, target_file, format):
 @click.option('--threshold', default=80, help='Coverage threshold %')
 @click.option('--format', type=click.Choice(['text', 'json']), default='text')
 @click.pass_context
-def audit_coverage(ctx, target_dir, threshold, format):
+def audit_coverage(ctx: click.Context, target_dir: str, threshold: int, format: str) -> None:
     """Coverage audit.
 
     Fails if coverage < threshold.
@@ -122,7 +122,7 @@ def audit_coverage(ctx, target_dir, threshold, format):
 @click.argument('source_file', type=click.Path(exists=True))
 @click.option('--output', help='Output file path (default: tests/test_<name>.py)')
 @click.pass_context
-def generate_test(ctx, source_file, output):
+def generate_test(ctx: click.Context, source_file: str, output: str | None) -> None:
     """Generate boilerplate tests.
 
     Creates skeleton test file based on AST analysis.
@@ -145,7 +145,7 @@ def generate_test(ctx, source_file, output):
 @click.option('--count', default=5, help='Number of items to generate')
 @click.option('--format', type=click.Choice(['text', 'json']), default='json')
 @click.pass_context
-def generate_data(ctx, data_type, count, format):
+def generate_data(ctx: click.Context, data_type: str, count: int, format: str) -> None:
     """Generate synthetic test data.
 
     Types: strings, numbers, json, dates, emails, all
@@ -180,7 +180,7 @@ def generate_data(ctx, data_type, count, format):
 @click.argument('test_path', type=click.Path(exists=True))
 @click.option('--backup', is_flag=True, help='Create backup before migration')
 @click.pass_context
-def migrate_test(ctx, test_path, backup):
+def migrate_test(ctx: click.Context, test_path: str, backup: bool) -> None:
     """Migrate unittest to pytest.
 
     Converts:
@@ -229,7 +229,7 @@ def migrate_test(ctx, test_path, backup):
 @click.option('--threshold', default=1.0, help='Seconds threshold for slow')
 @click.option('--top', default=10, help='Show top N slow tests')
 @click.pass_context
-def find_slow_tests(ctx, target_dir, threshold, top):
+def find_slow_tests(ctx: click.Context, target_dir: str, threshold: float, top: int) -> None:
     """Find slow tests.
 
     Uses pytest --durations to identify bottlenecks.
@@ -262,7 +262,7 @@ def find_slow_tests(ctx, target_dir, threshold, top):
 @click.argument('function_signature')
 @click.option('--output', help='Output file path')
 @click.pass_context
-def mock_generate(ctx, function_signature, output):
+def mock_generate(ctx: click.Context, function_signature: str, output: str | None) -> None:
     """Generate mock from signature.
 
     Example: agentic-test mock-generate "def get_user(id: int) -> User"
@@ -305,7 +305,7 @@ mock_{name}.return_value = None
 @click.option('--threshold', default=80, help='Coverage threshold')
 @click.option('--max-retries', default=3, help='Max healing attempts')
 @click.pass_context
-def run_workflow(ctx, workflow, target, threshold, max_retries):
+def run_workflow(ctx: click.Context, workflow: str, target: str, threshold: int, max_retries: int) -> None:
     """Run pre-defined workflows.
 
     Workflows:
@@ -356,7 +356,7 @@ def run_workflow(ctx, workflow, target, threshold, max_retries):
 # =============================================================================
 
 @cli.command('version')
-def show_version():
+def show_version() -> None:
     """Show version information."""
     click.echo("Agentic Testing CLI v1.0.0")
     click.echo(f"Python: {sys.version}")
@@ -365,7 +365,7 @@ def show_version():
 @cli.command('init')
 @click.argument('config_path', type=click.Path())
 @click.pass_context
-def init_config(ctx, config_path):
+def init_config(ctx: click.Context, config_path: str) -> None:
     """Initialize configuration file."""
     config = {
         "test": {
