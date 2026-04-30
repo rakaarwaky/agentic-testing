@@ -11,7 +11,7 @@ from ..agent.dependency_injection_container import get_container
 
 
 @click.group()
-@click.version_option(version='1.0.0', prog_name='agentic-test')
+@click.version_option(version='1.1.1', prog_name='agentic-test')
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """Agentic Testing CLI: Autonomous Unit Testing with Self-Healing.
@@ -393,7 +393,7 @@ def run_workflow(ctx: click.Context, workflow: str, target: str, threshold: int,
 @cli.command('version')
 def show_version() -> None:
     """Show version information."""
-    click.echo("Agentic Testing CLI v1.0.0")
+    click.echo("Agentic Testing CLI v1.1.1")
     click.echo(f"Python: {sys.version}")
 
 

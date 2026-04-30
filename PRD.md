@@ -8,7 +8,7 @@
 
 **Name**: Agentic Testing
 **Type**: MCP Server + CLI Tool
-**Version**: 1.1.0
+**Version**: 1.1.1
 **License**: MIT
 **Language**: Python >= 3.12
 

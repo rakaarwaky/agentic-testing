@@ -66,7 +66,8 @@ def register_tools(mcp: FastMCP, container: Container) -> None:
         Example: {"action": "run", "args": {"test_path": "tests/test_parser.py", "heal": True}}
         """
         # Build command
-        cmd = ["agentic-test", action]
+        import sys
+        cmd = [sys.executable, "-m", "src.surfaces.cli_main_entry", action]
 
         if args:
             if action == "run":
@@ -211,7 +212,8 @@ def register_tools(mcp: FastMCP, container: Container) -> None:
         - workflow: workflow
         - utility: version, init
         """
-        cmd = ["agentic-test", "--help"]
+        import sys
+        cmd = [sys.executable, "-m", "src.surfaces.cli_main_entry", "--help"]
         result = await execute_via_unix_socket(cmd, timeout=30)
 
         output = result.get("stdout", "") or result.get("stderr", "")
@@ -282,7 +284,7 @@ def register_tools(mcp: FastMCP, container: Container) -> None:
                 "execution_mode": execution_mode,
                 "unix_socket_available": socket_available,
                 "unix_socket_path": get_socket_path(),
-                "version": "1.1.0",
+                "version": "1.1.1",
             },
             indent=2,
         )
@@ -395,11 +397,12 @@ agentic-test run tests/old_test.py --heal
             "architecture": """
 # Architecture
 
-This repository uses **Enterprise 4-Layer Clean Architecture**:
-1. **Domain**: Core logic, entities, and protocols
-2. **Application**: Business use cases
-3. **Infrastructure**: Concrete implementations and adapters
-4. **Interface**: Surface area for MCP communication
+This repository uses a **Clean 5-Domain Architecture**:
+1. **Agent**: Lifecycle, orchestration, DI container
+2. **Capabilities**: Thinking logic — test execution, healing, analysis
+3. **Infrastructure**: Adapters — pytest runner, file system, transports
+4. **Surfaces**: Interfaces — CLI (Click), MCP (FastMCP)
+5. **Taxonomy**: Value objects, interfaces, models
 
 ## Hybrid Architecture Pattern
 ```

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 (2026-04-30)
+
+### Fixed
+- **ErrorCode Attribute Access**: Fixed a critical `AttributeError` in the healing strategies where it was incorrectly accessing `.value` instead of `.code` for the `ErrorCode` value object.
+
 ## 1.1.0 (2026-04-30)
 
 ### Fixed & Stabilized

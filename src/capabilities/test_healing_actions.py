@@ -48,7 +48,9 @@ class ImportErrorStrategy(FixStrategy):
     """Fixes ImportError/ModuleNotFoundError by adding sys.path."""
 
     def can_fix(self, result: TestResult) -> bool:
-        return result.error_type in ("ImportError", "ModuleNotFoundError")
+        if not result.error_code:
+            return False
+        return result.error_code.code in ("ImportError", "ModuleNotFoundError")
 
     async def apply_fix(self, result: TestResult) -> bool:
         file_path = str(result.target)
@@ -76,7 +78,7 @@ class AttributeErrorStrategy(FixStrategy):
     """Fixes AttributeError typos using Levenshtein distance."""
 
     def can_fix(self, result: TestResult) -> bool:
-        return result.error_type == "AttributeError"
+        return result.error_code is not None and result.error_code.code == "AttributeError"
 
     async def apply_fix(self, result: TestResult) -> bool:
         file_path = str(result.target)
@@ -119,7 +121,7 @@ class TypeErrorStrategy(FixStrategy):
     """Fixes TypeError from missing arguments."""
 
     def can_fix(self, result: TestResult) -> bool:
-        return result.error_type == "TypeError"
+        return result.error_code is not None and result.error_code.code == "TypeError"
 
     async def apply_fix(self, result: TestResult) -> bool:
         file_path = str(result.target)
@@ -156,7 +158,7 @@ class NameErrorStrategy(FixStrategy):
     }
 
     def can_fix(self, result: TestResult) -> bool:
-        return result.error_type == "NameError"
+        return result.error_code is not None and result.error_code.code == "NameError"
 
     async def apply_fix(self, result: TestResult) -> bool:
         file_path = str(result.target)
@@ -183,7 +185,7 @@ class AssertionErrorStrategy(FixStrategy):
     """Fixes AssertionError by patching expected values."""
 
     def can_fix(self, result: TestResult) -> bool:
-        return result.error_type == "AssertionError"
+        return result.error_code is not None and result.error_code.code == "AssertionError"
 
     async def apply_fix(self, result: TestResult) -> bool:
         if result.failure and result.failure.position:

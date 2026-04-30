@@ -137,5 +137,5 @@ async def is_server_healthy() -> dict:
         "status": "ready",
         "installed": True,
         "security_enabled": True,
-        "version": "1.1.0",
+        "version": "1.1.1",
     }

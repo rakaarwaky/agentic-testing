@@ -45,8 +45,8 @@ class HeuristicHealer(ITestHealer):
             return None
 
     async def attempt_fix(self, result: TestResult) -> bool:
-        """Attempts to fix based on error_type using strategy pattern."""
-        if not result.error_type:
+        """Attempts to fix based on error_code using strategy pattern."""
+        if not result.error_code:
             return False
 
         # Create backup before any fix attempt
