@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 (2026-04-30)
+
+### Added
+- **Installation Scripts**: Added `install.sh` (Linux/macOS) and `install.ps1` (Windows) for easier one-liner installation.
+- **Publish Workflow**: Added GitHub Actions workflow for automatic publishing to PyPI.
+
 ## 1.1.1 (2026-04-30)
 
 ### Fixed

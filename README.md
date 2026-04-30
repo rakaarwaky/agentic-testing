@@ -55,15 +55,24 @@
 
 ## Install
 
+### One-Liner (Linux/macOS)
 ```bash
-cd /path/to/agentic-testing
-pip install -e .
+curl -sSL https://raw.githubusercontent.com/rakaarwaky/agentic-testing/main/install.sh | bash
+```
+
+### One-Liner (Windows PowerShell)
+```powershell
+iwr https://raw.githubusercontent.com/rakaarwaky/agentic-testing/main/install.ps1 | iex
+```
+
+### Manual Install
+```bash
+pip install agentic-testing
 ```
 
 Or with [uv](https://github.com/astral-sh/uv):
-
 ```bash
-uv sync
+uv tool install agentic-testing
 ```
 
 ### Verify

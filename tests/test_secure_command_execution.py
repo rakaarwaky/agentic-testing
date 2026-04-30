@@ -72,4 +72,4 @@ class TestServerHealth:
     async def test_health(self):
         result = await is_server_healthy()
         assert result["status"] == "ready"
-        assert result["version"] == "1.0.0"
+        assert result["version"] == "1.1.1"

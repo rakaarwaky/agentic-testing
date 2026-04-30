@@ -1,11 +1,13 @@
 import pytest
 from src.capabilities.code_analysis_actions import AstAnalyzer
+from src.infrastructure.file_system_provider import LocalFileSystem
 import os
 
 
 @pytest.mark.asyncio
 async def test_ast_analyzer_basic():
-    analyzer = AstAnalyzer()
+    fs = LocalFileSystem()
+    analyzer = AstAnalyzer(file_system=fs)
     # Create a dummy file for analysis
     dummy_file = "dummy_test.py"
     with open(dummy_file, "w") as f:
@@ -25,6 +27,7 @@ async def test_ast_analyzer_basic():
 
 @pytest.mark.asyncio
 async def test_ast_analyzer_error():
-    analyzer = AstAnalyzer()
+    fs = LocalFileSystem()
+    analyzer = AstAnalyzer(file_system=fs)
     result = await analyzer.analyze_file("non_existent.py")
     assert "error" in result

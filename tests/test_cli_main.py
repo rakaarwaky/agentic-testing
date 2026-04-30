@@ -30,6 +30,8 @@ def mock_container():
         container.generator.generate_dates = MagicMock(return_value=["2024-01-01"])
         container.generator.generate_emails = MagicMock(return_value=["a@b.com"])
         container.generator.generate_all = MagicMock(return_value={"strings": []})
+        container.file_system.read_file = AsyncMock(return_value="")
+        container.file_system.write_file = AsyncMock(return_value=None)
         mock.return_value = container
         yield container
 
@@ -148,7 +150,7 @@ class TestCliVersion:
     def test_version(self, runner):
         result = runner.invoke(cli, ["version"])
         assert result.exit_code == 0
-        assert "1.0.0" in result.output
+        assert "1.1.2" in result.output
 
 
 class TestCliInit:

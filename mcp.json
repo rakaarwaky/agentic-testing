@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agentic-testing": {
+      "command": "uv",
+      "args": [
+        "run",
+        "agentic-testing"
+      ]
+    }
+  }
+}

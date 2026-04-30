@@ -59,7 +59,7 @@ uv sync
 pip install -e ".[dev]"
 
 # Verify installation
-python -m pytest tests/infrastructure/test_file_system.py -q
+python -m pytest tests/taxonomy/test_taxonomy.py -q
 # Expected: all tests passing
 
 # Check version
@@ -70,15 +70,16 @@ agentic-test version
 
 ## Architecture
 
-### 5-Domain Model
+### 6-Domain Model
 
 ```
 src/
   agent/              -- Wiring layer: DI container, logging setup
   capabilities/       -- Thinking layer: test execution, healing, analysis, generation
+  contract/           -- Contract layer: pure interfaces and DTOs (ABC enforced)
   infrastructure/     -- Toolbox layer: adapters, file system, transports
   surfaces/           -- Interface layer: CLI, MCP tools
-  taxonomy/           -- Language layer: interfaces, models, data classes
+  taxonomy/           -- Language layer: VOs, domain errors, events
 ```
 
 ### Dependency Rules
@@ -93,16 +94,17 @@ agent         → everything         OK (wiring layer)
 
 ### Key Interfaces
 
-All adapters implement interfaces defined in `taxonomy/models.py`:
+All adapters implement interfaces defined in `src/contract/`:
 
-| Interface        | Purpose                        |
-| ---------------- | ------------------------------ |
-| `ITestRunner`  | Execute tests, return results  |
-| `ITestHealer`  | Auto-fix test failures          |
-| `ICodeAnalyzer`| AST analysis of source files    |
-| `IQualityAuditor`| Coverage auditing             |
-| `ITestGenerator`| Test file generation            |
-| `IFileSystem`  | File read/write operations      |
+| Interface          | Location                          | Purpose                        |
+| ------------------ | --------------------------------- | ------------------------------ |
+| `ITestRunner`      | `contract/test_runner_protocol`   | Execute tests, return results  |
+| `ITestHealer`      | `contract/test_healer_protocol`   | Auto-fix test failures          |
+| `ICodeAnalyzer`    | `contract/code_analyzer_protocol` | AST analysis of source files    |
+| `IQualityAuditor`  | `contract/quality_auditor_protocol`| Coverage auditing             |
+| `ITestGenerator`   | `contract/test_generator_protocol`| Test file generation            |
+| `IFileSystem`      | `contract/file_system_port`       | File read/write operations      |
+| `IGovernance`      | `contract/protocol.py`            | Architectural governance scan   |
 
 ### Data Flow
 
@@ -133,22 +135,21 @@ Healer (if failed) → Retry
 
 File: `src/capabilities/<domain>_<action>.py`
 
-Implement the relevant interface from `taxonomy/models.py`:
+Implement the relevant interface from `src.contract`:
 
 ```python
 """Capability for <description>."""
-from src.taxonomy.models import ICodeAnalyzer
+from src.contract import ICodeAnalyzer
 
 class MyAnalyzer(ICodeAnalyzer):
     async def analyze_file(self, file_path: str) -> dict:
-        # Implement analysis logic using async file system
-        # content = await self.file_system.read_file(file_path)
+        # Implement analysis logic
         return {"file": file_path, "complexity": 0}
 ```
 
 ### 2. Wire in container
 
-File: `src/agent/wiring.py`
+File: `src/agent/dependency_wiring_container.py`
 
 ```python
 from ..capabilities.my_analyzer import MyAnalyzer
@@ -189,7 +190,7 @@ Implement the relevant interface:
 
 ```python
 """Adapter for <service>."""
-from ..taxonomy.models import ITestRunner, TestResult
+from ..contract import ITestRunner, TestResult
 
 class CustomRunner(ITestRunner):
     async def run_test(self, test_path: str) -> TestResult:
@@ -199,7 +200,7 @@ class CustomRunner(ITestRunner):
 
 ### 2. Wire in container
 
-File: `src/agent/wiring.py`
+File: `src/agent/dependency_wiring_container.py`
 
 ```python
 from ..infrastructure.custom_runner_adapter import CustomRunner
@@ -233,22 +234,20 @@ async def test_custom_runner():
 
 ### 1. Choose the right place
 
-Commands are in `src/surfaces/cli_main.py`. Keep it under 300 lines.
-If it exceeds that, create `src/surfaces/cli_<domain>_commands.py`.
+Commands are in `src/surfaces/cli_main_entry.py`. 
 
 ### 2. Add the command
 
 ```python
 @cli.command('my-command')
 @click.argument('target', type=click.Path(exists=True))
-@click.option('--format', type=click.Choice(['text', 'json']), default='text')
 @click.pass_context
-def my_command(ctx, target, format):
+def my_command(ctx, target):
     """Description shown in --help."""
     container = ctx.obj['container']
 
     async def _run():
-        # Use container.use_case or adapters
+        # Use container.test_use_case or container.analyzer
         pass
 
     import asyncio
@@ -271,9 +270,9 @@ def test_my_command():
 
 ## How to Add an MCP Tool
 
-### 1. Add to mcp_tools.py
+### 1. Add to mcp_tools_registry.py
 
-File: `src/surfaces/mcp_tools.py`
+File: `src/surfaces/mcp_tools_registry.py`
 
 ```python
 @mcp.tool()
