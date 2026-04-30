@@ -3,6 +3,8 @@
     "agentic-testing": {
       "command": "uv",
       "args": [
+        "--directory",
+        "/home/raka/mcp-servers/agentic-testing",
         "run",
         "agentic-testing"
       ]
