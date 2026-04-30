@@ -26,19 +26,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -e ".[dev]"
+          uv pip install --system -e ".[dev]"
 
       - name: Lint with ruff
         run: |
-          uv pip install ruff
+          uv pip install --system ruff
           ruff check src/
 
       - name: Type check with mypy
         run: |
-          uv pip install mypy
+          uv pip install --system mypy
           mypy src/ --ignore-missing-imports
 
       - name: Run tests
         run: |
-          uv pip install pytest pytest-asyncio pytest-cov
-          pytest tests/ --cov=src --ignore=tests/test_failing_sample.py -v
+          uv pip install --system pytest pytest-asyncio pytest-cov
+          pytest tests/ --cov=src -v
