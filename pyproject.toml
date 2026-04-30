@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentic-testing-mcp"
-version = "1.1.4"
+version = "1.1.5"
 description = "MCP server for autonomous unit testing and self-healing"
 requires-python = ">=3.12"
 readme = "README.md"
