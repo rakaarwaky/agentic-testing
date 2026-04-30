@@ -128,6 +128,7 @@ agentic-test generate-data emails --count 10
 | --------------------------- | ----------------------------- |
 | `agentic-test version`    | Show version                  |
 | `agentic-test init <path>`| Initialize configuration file |
+| `agentic-test governance <dir>`| Architectural governance scan |
 
 Full list: `agentic-test --help`
 

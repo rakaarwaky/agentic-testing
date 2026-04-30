@@ -1,5 +1,7 @@
 from pathlib import Path
-from ..taxonomy import IFileSystem
+import asyncio
+from ..contract import IFileSystem
+from ..taxonomy.lint_identifier_vo import FilePath
 
 
 class PathValidationError(ValueError):
@@ -39,35 +41,53 @@ class LocalFileSystem(IFileSystem):
             )
         return resolved
 
-    def read_file(self, path: str) -> str:
-        validated = self._validate_path(path)
-        with open(validated, "r") as f:
+    async def read_file(self, path: FilePath | str) -> str:
+        path_str = str(path)
+        validated = self._validate_path(path_str)
+        return await asyncio.to_thread(self._sync_read_file, validated)
+
+    def _sync_read_file(self, path: Path) -> str:
+        with open(path, "r") as f:
             return f.read()
 
-    def write_file(self, path: str, content: str) -> None:
-        validated = self._validate_path(path)
-        validated.parent.mkdir(parents=True, exist_ok=True)
-        with open(validated, "w") as f:
+    async def write_file(self, path: FilePath | str, content: str) -> None:
+        path_str = str(path)
+        validated = self._validate_path(path_str)
+        await asyncio.to_thread(self._sync_write_file, validated, content)
+
+    def _sync_write_file(self, path: Path, content: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as f:
             f.write(content)
 
-    def file_exists(self, path: str) -> bool:
+    async def file_exists(self, path: FilePath | str) -> bool:
+        path_str = str(path)
         try:
-            validated = self._validate_path(path)
-            return validated.exists()
-        except PathValidationError:
+            validated = self._validate_path(path_str)
+            return await asyncio.to_thread(validated.exists)
+        except Exception:
             return False
 
-    def read_lines(self, path: str) -> list[str]:
-        validated = self._validate_path(path)
-        with open(validated, "r") as f:
+    async def read_lines(self, path: FilePath | str) -> list[str]:
+        path_str = str(path)
+        validated = self._validate_path(path_str)
+        return await asyncio.to_thread(self._sync_read_lines, validated)
+
+    def _sync_read_lines(self, path: Path) -> list[str]:
+        with open(path, "r") as f:
             return f.readlines()
 
-    def write_lines(self, path: str, lines: list[str]) -> None:
-        validated = self._validate_path(path)
-        validated.parent.mkdir(parents=True, exist_ok=True)
-        with open(validated, "w") as f:
+    async def write_lines(self, path: FilePath | str, lines: list[str]) -> None:
+        path_str = str(path)
+        validated = self._validate_path(path_str)
+        await asyncio.to_thread(self._sync_write_lines, validated, lines)
+
+    def _sync_write_lines(self, path: Path, lines: list[str]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as f:
             f.writelines(lines)
 
-    def makedirs(self, path: str, exist_ok: bool = True) -> None:
-        validated = self._validate_path(path)
-        validated.mkdir(parents=True, exist_ok=exist_ok)
+    async def makedirs(self, path: FilePath | str, exist_ok: bool = True) -> None:
+        path_str = str(path)
+        validated = self._validate_path(path_str)
+        await asyncio.to_thread(validated.mkdir, parents=True, exist_ok=exist_ok)

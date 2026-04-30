@@ -1,7 +1,7 @@
-"""Tests for taxonomy/test_interface_vo.py — ABC interface contracts."""
+"""Tests for contract interfaces — ABC enforcement."""
 
 import pytest
-from src.taxonomy import (
+from src.contract import (
     ITestRunner,
     ITestHealer,
     ICodeAnalyzer,

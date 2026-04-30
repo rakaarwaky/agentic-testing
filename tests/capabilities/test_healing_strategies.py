@@ -11,7 +11,7 @@ from src.capabilities.test_healing_actions import (
     NameErrorStrategy,
     AssertionErrorStrategy,
 )
-from src.taxonomy import TestResult, FailureMetadata
+from src.contract import TestResult, FailureMetadata
 from src.infrastructure.file_system_provider import LocalFileSystem
 
 

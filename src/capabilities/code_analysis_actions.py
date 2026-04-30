@@ -1,14 +1,17 @@
 import ast
-from src.taxonomy import ICodeAnalyzer
+from src.contract import ICodeAnalyzer, IFileSystem
 
 
 class AstAnalyzer(ICodeAnalyzer):
     """Static analysis using Python AST (Capability)."""
 
+    def __init__(self, file_system: IFileSystem):
+        self.file_system = file_system
+
     async def analyze_file(self, file_path: str) -> dict:
         try:
-            with open(file_path, "r") as f:
-                tree = ast.parse(f.read())
+            content = await self.file_system.read_file(file_path)
+            tree = ast.parse(content)
 
             classes = [
                 node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)

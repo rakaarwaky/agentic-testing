@@ -101,11 +101,41 @@ async def execute_command_secure(
         }
 
 
+import asyncio
+
+async def execute_command_async(
+    command: list[str], working_dir: str | None = None, timeout: int = 300
+) -> tuple[asyncio.subprocess.Process, dict[str, Any]]:
+    """
+    Execute command asynchronously and return the process and a partial result.
+    If the command is blocked, returns (None, error_dict).
+    """
+
+    # Security check
+    safe, reason = is_command_safe(command)
+    if not safe:
+        return None, {
+            "stdout": "",
+            "stderr": f"Security blocked: {reason}",
+            "returncode": 1,
+            "executed_by": "agentic-testing-mcp",
+            "blocked": True,
+        }
+
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=working_dir or os.getcwd(),
+    )
+    return proc, {"executed_by": "agentic-testing-mcp"}
+
+
 async def is_server_healthy() -> dict:
     """Check server health status."""
     return {
         "status": "ready",
         "installed": True,
         "security_enabled": True,
-        "version": "1.0.0",
+        "version": "1.1.0",
     }

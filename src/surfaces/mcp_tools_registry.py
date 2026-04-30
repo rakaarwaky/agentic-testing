@@ -144,9 +144,36 @@ def register_tools(mcp: FastMCP, container: Container) -> None:
                 "blocked": True,
             }, indent=2)
 
-        # Execute via secure Unix socket
-        result = await execute_via_unix_socket(cmd, timeout=300)
-
+        mode = _get_execution_mode()
+        job_id = f"job_{len(container.job_registry) + 1}"
+        
+        if mode == "unix_socket":
+            # Execute via secure Unix socket
+            result = await execute_via_unix_socket(cmd, timeout=300)
+        else:
+            # Direct execution with job tracking
+            from ..infrastructure.secure_command_adapter import execute_command_async
+            import asyncio
+            
+            proc, result = await execute_command_async(cmd, timeout=300)
+            if proc:
+                container.job_registry[job_id] = proc
+                try:
+                    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
+                    result["stdout"] = stdout.decode()
+                    result["stderr"] = stderr.decode()
+                    result["returncode"] = proc.returncode
+                    result["job_id"] = job_id
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await proc.wait()
+                    result["stdout"] = ""
+                    result["stderr"] = "Command timed out after 300s"
+                    result["returncode"] = 124
+                finally:
+                    if job_id in container.job_registry:
+                        del container.job_registry[job_id]
+            
         return json.dumps(
             {
                 "command": " ".join(cmd),
@@ -154,6 +181,7 @@ def register_tools(mcp: FastMCP, container: Container) -> None:
                 "stderr": result.get("stderr", ""),
                 "returncode": result.get("returncode", 1),
                 "executed_by": "agentic-testing-mcp",
+                "job_id": job_id if mode != "unix_socket" else None
             },
             indent=2,
         )
@@ -254,7 +282,7 @@ def register_tools(mcp: FastMCP, container: Container) -> None:
                 "execution_mode": execution_mode,
                 "unix_socket_available": socket_available,
                 "unix_socket_path": get_socket_path(),
-                "version": "1.0.0",
+                "version": "1.1.0",
             },
             indent=2,
         )
@@ -398,15 +426,36 @@ AI Agent → 5 Core MCP Tools → 11+ CLI Commands → SKILL.md Context
     ) -> str:
         """
         Cancel a running test job.
-
-        Note: Current implementation uses local process management.
-        In future, this can integrate with DesktopCommander's session management.
         """
-        return json.dumps(
-            {
-                "status": "not_implemented",
-                "message": "Job cancellation via MCP not yet implemented. Use Ctrl+C in terminal.",
-                "job_id": job_id,
-            },
-            indent=2,
-        )
+        if job_id in container.job_registry:
+            proc = container.job_registry[job_id]
+            try:
+                proc.kill()
+                # We don't wait here to avoid blocking the cancel tool call
+                # The execute_command task will handle cleanup
+                return json.dumps(
+                    {
+                        "status": "cancelled",
+                        "message": f"Job {job_id} has been terminated.",
+                        "job_id": job_id,
+                    },
+                    indent=2,
+                )
+            except Exception as e:
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": f"Failed to cancel job {job_id}: {str(e)}",
+                        "job_id": job_id,
+                    },
+                    indent=2,
+                )
+        else:
+            return json.dumps(
+                {
+                    "status": "not_found",
+                    "message": f"Job {job_id} not found or already completed.",
+                    "job_id": job_id,
+                },
+                indent=2,
+            )

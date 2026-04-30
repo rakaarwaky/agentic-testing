@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.0 (2026-04-30)
+
+### Fixed & Stabilized
+- **Functional Job Cancellation**: Implemented full `cancel_job` tool with process tracking and termination.
+- **Asynchronous I/O Transformation**: Converted `IFileSystem` to fully asynchronous implementation using `asyncio.to_thread`, eliminating event loop blocking.
+- **Architectural Governance**: Integrated `GovernanceAdapter` into CLI and MCP tools to enforce layer dependency rules.
+- **Thread-Safe Backups**: Switched to timestamped unique backup filenames to prevent race conditions during parallel healing.
+- **Portability Improvements**: Removed hard-coded developer-specific paths in `DesktopCommander` delegation.
+- **Test Suite Restoration**: Fixed systemic import errors in `tests/` directory caused by layer-crossing imports.
+- **Defensive Error Handling**: Added try/except guards for test generation and healing actions to prevent tool crashes.
+
+### Improved
+- Cleaned up duplicate protocol definitions (`port.py` vs `file_system_port.py`).
+- Enhanced `AstAnalyzer` to be asynchronous.
+- Added `governance audit` CLI command.
+
 ## 1.0.0 (2026-04-13)
 
 ### Added

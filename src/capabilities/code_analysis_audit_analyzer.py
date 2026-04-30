@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 import subprocess
-from src.taxonomy import IQualityAuditor
+from src.contract import IQualityAuditor
 
 
 class CoverageAuditor(IQualityAuditor):
@@ -26,17 +26,20 @@ class CoverageAuditor(IQualityAuditor):
             await proc.communicate()
 
             if os.path.exists(report_file):
-                with open(report_file, "r") as f:
-                    try:
-                        data = json.load(f)
-                        return {
-                            "total_pct": data.get("totals", {}).get(
-                                "percent_covered", 0
-                            ),
-                            "summary": "Coverage report generated successfully.",
-                        }
-                    except json.JSONDecodeError:
-                        return {"error": "Invalid coverage report format."}
+                def _read_json():
+                    with open(report_file, "r") as f:
+                        return json.load(f)
+                
+                try:
+                    data = await asyncio.to_thread(_read_json)
+                    return {
+                        "total_pct": data.get("totals", {}).get(
+                            "percent_covered", 0
+                        ),
+                        "summary": "Coverage report generated successfully.",
+                    }
+                except (json.JSONDecodeError, OSError):
+                    return {"error": "Invalid coverage report format or read error."}
             return {"error": "Failed to generate coverage report."}
         except Exception as e:
             return {"error": f"Coverage analysis failed: {str(e)}"}

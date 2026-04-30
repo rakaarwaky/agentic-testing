@@ -2,7 +2,7 @@ import pytest
 import uuid
 from pathlib import Path
 from src.capabilities.autonomous_testing_healing_adapter import HeuristicHealer
-from src.taxonomy import TestResult
+from src.contract import TestResult
 from src.infrastructure.file_system_provider import LocalFileSystem
 
 

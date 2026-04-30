@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, AsyncMock
 from mcp.server.fastmcp import FastMCP
 from src.surfaces.mcp_tools_registry import register_tools
 from src.agent.dependency_injection_container import Container
-from src.taxonomy import TestResult
+from src.contract import TestResult
 
 
 @pytest.mark.asyncio

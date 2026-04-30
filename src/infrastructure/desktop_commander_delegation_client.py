@@ -11,13 +11,19 @@ import os
 
 
 DESKTOP_COMMANDER_CLI = os.environ.get(
-    "DESKTOP_COMMANDER_PATH", "/home/rakaarwaky/.nvm/versions/node/v20.20.2/bin/node"
+    "DESKTOP_COMMANDER_PATH", "node"
 )
 
-DESKTOP_COMMANDER_SCRIPT = os.environ.get(
-    "DESKTOP_COMMANDER_SCRIPT",
-    "/home/rakaarwaky/mcp-servers/DesktopCommanderMCP/dist/index.js",
-)
+# Compute default script path relative to this file
+# Assumes the typical MCP server layout: mcp-servers/agentic-testing and mcp-servers/DesktopCommanderMCP
+_current_file = os.path.abspath(__file__)
+_infra_dir = os.path.dirname(_current_file)
+_src_dir = os.path.dirname(_infra_dir)
+_project_root = os.path.dirname(_src_dir)
+_mcp_servers_dir = os.path.dirname(_project_root)
+
+_default_script = os.path.join(_mcp_servers_dir, "DesktopCommanderMCP", "dist", "index.js")
+DESKTOP_COMMANDER_SCRIPT = os.environ.get("DESKTOP_COMMANDER_SCRIPT", _default_script)
 
 
 async def execute_via_desktop_commander(

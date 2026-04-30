@@ -6,6 +6,10 @@ from src.taxonomy import (
 )
 
 
+
+
+
+
 def test_exception_hierarchy():
     assert issubclass(InfrastructureError, AgenticTestingError)
     assert issubclass(AnalysisError, AgenticTestingError)

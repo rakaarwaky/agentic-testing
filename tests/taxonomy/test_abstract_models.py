@@ -1,5 +1,5 @@
 import pytest
-from src.taxonomy import (
+from src.contract import (
     ITestRunner,
     ITestHealer,
     ICodeAnalyzer,

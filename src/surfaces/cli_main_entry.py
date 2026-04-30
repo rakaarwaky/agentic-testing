@@ -137,6 +137,38 @@ def generate_test(ctx: click.Context, source_file: str, output: str | None) -> N
 
 
 # =============================================================================
+# Governance Commands
+# =============================================================================
+
+@cli.command('governance')
+@click.argument('target_dir', type=click.Path(exists=True), default='.')
+@click.option('--format', type=click.Choice(['text', 'json']), default='text')
+@click.pass_context
+def audit_governance(ctx: click.Context, target_dir: str, format: str) -> None:
+    """Architectural governance scan.
+    
+    Checks for AES layer rule violations.
+    """
+    container = ctx.obj['container']
+
+    async def _scan():
+        violations = await asyncio.to_thread(container.governance.scan, target_dir)
+
+        if format == 'json':
+            click.echo(json.dumps([v.__dict__ for v in violations], indent=2))
+        else:
+            if not violations:
+                click.echo("✅ No architecture violations found.")
+            else:
+                click.echo(f"❌ Found {len(violations)} architecture violations:")
+                for v in violations:
+                    click.echo(f"- {v.message} ({v.file_path}:{v.line_no})")
+                sys.exit(1)
+
+    asyncio.run(_scan())
+
+
+# =============================================================================
 # Test Data Generation
 # =============================================================================
 
@@ -190,34 +222,37 @@ def migrate_test(ctx: click.Context, test_path: str, backup: bool) -> None:
     """
     container = ctx.obj['container']
 
-    try:
-        content = container.file_system.read_file(test_path)
+    async def _migrate():
+        try:
+            content = await container.file_system.read_file(test_path)
 
-        if backup:
-            backup_path = test_path + '.bak'
-            container.file_system.write_file(backup_path, content)
-            click.echo(f"✅ Backup created: {backup_path}")
+            if backup:
+                backup_path = test_path + '.bak'
+                await container.file_system.write_file(backup_path, content)
+                click.echo(f"✅ Backup created: {backup_path}")
 
-        # Migration logic using regex for valid Python output
-        new_content = content.replace("unittest.TestCase", "")
-        # Fix #1: Use regex to produce valid pytest assertions
-        new_content = re.sub(
-            r'self\.assertEqual\((.+?),\s*(.+?)\)', r'assert \1 == \2', new_content
-        )
-        new_content = re.sub(
-            r'self\.assertTrue\((.+?)\)', r'assert \1', new_content
-        )
-        new_content = re.sub(
-            r'self\.assertFalse\((.+?)\)', r'assert not \1', new_content
-        )
-        new_content = re.sub(r'import unittest\n', '', new_content)
+            # Migration logic using regex for valid Python output
+            new_content = content.replace("unittest.TestCase", "")
+            # Fix #1: Use regex to produce valid pytest assertions
+            new_content = re.sub(
+                r'self\.assertEqual\((.+?),\s*(.+?)\)', r'assert \1 == \2', new_content
+            )
+            new_content = re.sub(
+                r'self\.assertTrue\((.+?)\)', r'assert \1', new_content
+            )
+            new_content = re.sub(
+                r'self\.assertFalse\((.+?)\)', r'assert not \1', new_content
+            )
+            new_content = re.sub(r'import unittest\n', '', new_content)
 
-        container.file_system.write_file(test_path, new_content)
-        click.echo(f"✅ Migrated {test_path} to pytest-style")
+            await container.file_system.write_file(test_path, new_content)
+            click.echo(f"✅ Migrated {test_path} to pytest-style")
 
-    except Exception as e:
-        click.echo(f"❌ Migration failed: {str(e)}", err=True)
-        sys.exit(1)
+        except Exception as e:
+            click.echo(f"❌ Migration failed: {str(e)}", err=True)
+            sys.exit(1)
+
+    asyncio.run(_migrate())
 
 
 # =============================================================================

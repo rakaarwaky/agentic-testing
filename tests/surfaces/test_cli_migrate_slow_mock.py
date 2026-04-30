@@ -13,7 +13,7 @@ class TestMigrateCommand:
         """Fix #1: self.assertEqual(a, b) → assert a == b (valid Python)."""
         runner = CliRunner()
         # Create temp file within project root so LocalFileSystem can access it
-        tmp_dir = tempfile.mkdtemp(dir="/home/rakaarwaky/mcp-servers/agentic-testing")
+        tmp_dir = tempfile.mkdtemp(dir="/home/raka/mcp-servers/agentic-testing")
         test_file = os.path.join(tmp_dir, "test_old.py")
         with open(test_file, "w") as f:
             f.write(

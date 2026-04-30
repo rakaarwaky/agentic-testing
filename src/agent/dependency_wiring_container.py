@@ -38,7 +38,7 @@ def wire_dependencies() -> dict[str, typing.Any]:
     test_use_case = RunTestWithHealingUseCase(runner, healer)
 
     # Capability: Code Analysis
-    analyzer = AstAnalyzer()
+    analyzer = AstAnalyzer(file_system)
     auditor = CoverageAuditor()
 
     # Capability: Synthetic Data

@@ -1,4 +1,5 @@
-from src.taxonomy import ITestRunner, ITestHealer, TestResult
+from src.contract import ITestRunner, ITestHealer, TestResult
+from src.taxonomy import FilePath
 
 
 class RunTestWithHealingUseCase:
@@ -10,6 +11,7 @@ class RunTestWithHealingUseCase:
 
     async def execute(self, test_path: str, max_retries: int = 2) -> TestResult:
         """Runs the test, attempting to heal up to max_retries times upon failure."""
+        fp = FilePath(value=test_path)
 
         # Initial Run
         result = await self.runner.run_test(test_path)

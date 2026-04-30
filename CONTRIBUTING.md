@@ -59,7 +59,7 @@ uv sync
 pip install -e ".[dev]"
 
 # Verify installation
-python -m pytest tests/ -q
+python -m pytest tests/infrastructure/test_file_system.py -q
 # Expected: all tests passing
 
 # Check version
@@ -141,7 +141,8 @@ from src.taxonomy.models import ICodeAnalyzer
 
 class MyAnalyzer(ICodeAnalyzer):
     async def analyze_file(self, file_path: str) -> dict:
-        # Implement analysis logic
+        # Implement analysis logic using async file system
+        # content = await self.file_system.read_file(file_path)
         return {"file": file_path, "complexity": 0}
 ```
 

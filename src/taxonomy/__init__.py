@@ -1,4 +1,13 @@
-"""taxonomy — Shared language for all domains (VOs, entities, interfaces, errors, events)."""
+"""taxonomy — Shared language for all domains (VOs, errors, events).
+
+Responsibility:
+- Value Objects (domain-typed primitives): FilePath, TestName, Severity, etc.
+- Domain errors: AgenticTestingError, InfrastructureError, etc.
+- Domain events: TestRunStarted, HealApplied, etc.
+
+Contract layer imports FROM taxonomy — never the reverse.
+Consumers that need contracts should import from src.contract directly.
+"""
 
 __all__ = [
     # Value Objects: Core
@@ -7,11 +16,6 @@ __all__ = [
     "TestName", "FilePath", "SymbolName", "DirectoryPath",
     # Value Objects: Domain
     "ScopeRef", "Location",
-    # Entities
-    "TestResult", "FailureMetadata",
-    # Interfaces
-    "ITestRunner", "ITestHealer", "ICodeAnalyzer",
-    "IQualityAuditor", "ITestGenerator", "IFileSystem",
     # Errors
     "AgenticTestingError", "InfrastructureError", "AnalysisError", "GenerationError",
     # Events
@@ -38,22 +42,6 @@ from .lint_identifier_vo import (
 from .lint_domain_vo import (
     ScopeRef as ScopeRef,
     Location as Location,
-)
-
-# -- Entities --
-from .test_result_entity import (
-    TestResult as TestResult,
-    FailureMetadata as FailureMetadata,
-)
-
-# -- Interfaces --
-from .test_interface_vo import (
-    ITestRunner as ITestRunner,
-    ITestHealer as ITestHealer,
-    ICodeAnalyzer as ICodeAnalyzer,
-    IQualityAuditor as IQualityAuditor,
-    ITestGenerator as ITestGenerator,
-    IFileSystem as IFileSystem,
 )
 
 # -- Errors --

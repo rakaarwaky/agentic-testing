@@ -1,7 +1,7 @@
 ---
 name: agentic-testing
 description: MCP server for autonomous test generation and self-healing — FOR AI AGENTS.
-version: 1.0.0
+version: 1.1.0
 ---
 # Agentic Testing Skill
 
@@ -45,6 +45,7 @@ Execute any CLI command. This is the primary tool.
 {"action": "generate-data", "args": {"data_type": "emails", "count": 10}}
 {"action": "migrate", "args": {"test_path": "tests/old_test.py", "backup": true}}
 {"action": "workflow", "args": {"workflow": "test-and-fix", "target": "tests/"}}
+{"action": "governance", "args": {"target_dir": "."}}
 {"action": "version"}
 {"action": "init", "args": {"config_path": "config.json"}}
 ```
@@ -119,6 +120,7 @@ Cancel a running test job.
 | --------------------------- | ----------------------------- |
 | `agentic-test version`    | Show version                  |
 | `agentic-test init <path>`| Initialize configuration file |
+| `agentic-test governance <dir>`| Architectural governance scan |
 
 ## Self-Healing Capabilities
 

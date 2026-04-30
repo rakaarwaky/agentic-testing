@@ -1,5 +1,5 @@
 import logging
-from src.taxonomy import ITestHealer, TestResult, IFileSystem
+from src.contract import ITestHealer, TestResult, IFileSystem
 from .test_healing_actions import (
     FixStrategy,
     ImportErrorStrategy,
@@ -29,12 +29,14 @@ class HeuristicHealer(ITestHealer):
             NameErrorStrategy(file_system),
         ]
 
-    def _create_backup(self, file_path: str) -> str | None:
+    async def _create_backup(self, file_path: str) -> str | None:
         """Create backup before modifying a file. Returns backup path."""
-        import shutil
-        backup_path = file_path + '.healer.bak'
+        import time
+        timestamp = int(time.time())
+        backup_path = f"{file_path}.{timestamp}.healer.bak"
         try:
-            shutil.copy2(file_path, backup_path)
+            content = await self.file_system.read_file(file_path)
+            await self.file_system.write_file(backup_path, content)
             logger.info(f"Backup created: {backup_path}")
             self._backup_created = True
             return backup_path
@@ -48,17 +50,13 @@ class HeuristicHealer(ITestHealer):
             return False
 
         # Create backup before any fix attempt
-        file_path = (
-            result.failure.file_path
-            if result.failure and result.failure.file_path
-            else result.target
-        )
+        file_path = str(result.target)
         if file_path:
-            self._create_backup(file_path)
+            await self._create_backup(file_path)
 
         # Find and apply the first matching strategy
         for strategy in self._strategies:
             if strategy.can_fix(result):
-                return strategy.apply_fix(result)
+                return await strategy.apply_fix(result)
 
         return False

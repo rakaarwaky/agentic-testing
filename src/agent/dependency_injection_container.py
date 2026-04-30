@@ -22,6 +22,9 @@ class Container:
         self.generator = deps["generator"]
         self.test_generator = deps["test_generator"]
         self.governance = deps["governance"]
+        
+        # 3. State Management
+        self.job_registry: dict[str, Any] = {}
 
         self.logger.info("Container fully initialized with AES Domain 3 structure.")
 

@@ -1,6 +1,6 @@
 """Tests for TestResult entity — covering uncovered branches."""
 
-from src.taxonomy import TestResult, FailureMetadata
+from src.contract import TestResult, FailureMetadata
 
 
 class TestTestResultPosition:

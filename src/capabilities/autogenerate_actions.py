@@ -1,6 +1,6 @@
 import os
 import logging
-from src.taxonomy import ITestGenerator, ICodeAnalyzer, IFileSystem
+from src.contract import ITestGenerator, ICodeAnalyzer, IFileSystem
 import typing
 
 logger = logging.getLogger(__name__)
@@ -53,8 +53,8 @@ class AutogenerateTestUseCase(ITestGenerator):
 
         # Save to tests directory
         test_dir = os.path.join(os.getcwd(), "tests")
-        if not self.file_system.file_exists(test_dir):
-            self.file_system.makedirs(test_dir)
+        if not await self.file_system.file_exists(test_dir):
+            await self.file_system.makedirs(test_dir)
         elif not os.path.isdir(test_dir):
             return f"Error: '{test_dir}' exists but is not a directory"
 
@@ -62,7 +62,10 @@ class AutogenerateTestUseCase(ITestGenerator):
 
         # Avoid overwriting existing tests unless forced?
         # For now, let's just write and return the path.
-        self.file_system.write_file(test_file_path, "\n".join(test_content))
-
-        logger.info(f"Generated boilerplate test at {test_file_path}")
-        return f"Generated boilerplate test at {test_file_path}"
+        try:
+            await self.file_system.write_file(test_file_path, "\n".join(test_content))
+            logger.info(f"Generated boilerplate test at {test_file_path}")
+            return f"Generated boilerplate test at {test_file_path}"
+        except Exception as e:
+            logger.error(f"Failed to write test file {test_file_path}: {e}")
+            return f"Error writing test file: {str(e)}"

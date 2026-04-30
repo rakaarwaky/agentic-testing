@@ -8,7 +8,7 @@ import re
 import difflib
 import shutil
 from abc import ABC, abstractmethod
-from src.taxonomy import TestResult, IFileSystem
+from src.contract import TestResult, IFileSystem
 
 logger = logging.getLogger(__name__)
 
@@ -25,15 +25,18 @@ class FixStrategy(ABC):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def apply_fix(self, result: TestResult) -> bool:
+    async def apply_fix(self, result: TestResult) -> bool:
         """Apply the fix. Returns True if successful."""
         raise NotImplementedError()  # pragma: no cover
 
-    def _create_backup(self, file_path: str) -> str | None:
+    async def _create_backup(self, file_path: str) -> str | None:
         """Create backup before modifying a file."""
-        backup_path = file_path + '.healer.bak'
+        import time
+        timestamp = int(time.time())
+        backup_path = f"{file_path}.{timestamp}.healer.bak"
         try:
-            shutil.copy2(file_path, backup_path)
+            content = await self.file_system.read_file(file_path)
+            await self.file_system.write_file(backup_path, content)
             logger.info(f"Backup created: {backup_path}")
             return backup_path
         except OSError as e:
@@ -47,10 +50,10 @@ class ImportErrorStrategy(FixStrategy):
     def can_fix(self, result: TestResult) -> bool:
         return result.error_type in ("ImportError", "ModuleNotFoundError")
 
-    def apply_fix(self, result: TestResult) -> bool:
-        file_path = result.target
+    async def apply_fix(self, result: TestResult) -> bool:
+        file_path = str(result.target)
         try:
-            content = self.file_system.read_file(file_path)
+            content = await self.file_system.read_file(file_path)
             if "sys.path.insert" in content:
                 return False
             trigger = "import pytest"
@@ -61,7 +64,7 @@ class ImportErrorStrategy(FixStrategy):
                 "sys.path.insert(0, str(Path(__file__).parent.parent))\n"
             )
             new_content = content.replace(trigger, trigger + payload)
-            self.file_system.write_file(file_path, new_content)
+            await self.file_system.write_file(file_path, new_content)
             logger.info(f"Fixed missing sys path for {file_path}")
             return True
         except OSError as e:
@@ -75,8 +78,8 @@ class AttributeErrorStrategy(FixStrategy):
     def can_fix(self, result: TestResult) -> bool:
         return result.error_type == "AttributeError"
 
-    def apply_fix(self, result: TestResult) -> bool:
-        file_path = result.target
+    async def apply_fix(self, result: TestResult) -> bool:
+        file_path = str(result.target)
         log = result.output_log
         try:
             module_match = re.search(r"module '([^']+)' has no attribute '([^']+)'", log)
@@ -91,7 +94,7 @@ class AttributeErrorStrategy(FixStrategy):
             else:
                 return False
 
-            content = self.file_system.read_file(file_path)
+            content = await self.file_system.read_file(file_path)
             words = set(re.findall(r"\w+", content))
             matches = difflib.get_close_matches(attr_name, words, n=1, cutoff=0.8)
 
@@ -99,12 +102,12 @@ class AttributeErrorStrategy(FixStrategy):
                 suggested = matches[0]
                 new_content = content.replace(f".{attr_name}", f".{suggested}")
                 if new_content != content:
-                    self.file_system.write_file(file_path, new_content)
+                    await self.file_system.write_file(file_path, new_content)
                     logger.info(f"Fixed AttributeError typo: {attr_name} -> {suggested}")
                     return True
 
             if fix_hint not in content:
-                self.file_system.write_file(file_path, fix_hint + content)
+                await self.file_system.write_file(file_path, fix_hint + content)
                 logger.info(f"Added fallback hint for '{attr_name}'")
                 return True
         except Exception as e:
@@ -118,8 +121,8 @@ class TypeErrorStrategy(FixStrategy):
     def can_fix(self, result: TestResult) -> bool:
         return result.error_type == "TypeError"
 
-    def apply_fix(self, result: TestResult) -> bool:
-        file_path = result.target
+    async def apply_fix(self, result: TestResult) -> bool:
+        file_path = str(result.target)
         log = result.output_log
         try:
             match = re.search(
@@ -128,10 +131,10 @@ class TypeErrorStrategy(FixStrategy):
             if not match:
                 return False
             func_name = match.group(1)
-            content = self.file_system.read_file(file_path)
+            content = await self.file_system.read_file(file_path)
             new_content = content.replace(f"{func_name}()", f"{func_name}(None)")
             if new_content != content:
-                self.file_system.write_file(file_path, new_content)
+                await self.file_system.write_file(file_path, new_content)
                 logger.info(f"Fixed TypeError: added None to {func_name}")
                 return True
         except Exception as e:
@@ -155,8 +158,8 @@ class NameErrorStrategy(FixStrategy):
     def can_fix(self, result: TestResult) -> bool:
         return result.error_type == "NameError"
 
-    def apply_fix(self, result: TestResult) -> bool:
-        file_path = result.target
+    async def apply_fix(self, result: TestResult) -> bool:
+        file_path = str(result.target)
         log = result.output_log
         try:
             match = re.search(r"name '([^']+)' is not defined", log)
@@ -165,10 +168,10 @@ class NameErrorStrategy(FixStrategy):
             name = match.group(1)
             if name not in self._COMMON_IMPORTS:
                 return False
-            content = self.file_system.read_file(file_path)
+            content = await self.file_system.read_file(file_path)
             imp = self._COMMON_IMPORTS[name]
             if imp not in content:
-                self.file_system.write_file(file_path, imp + "\n" + content)
+                await self.file_system.write_file(file_path, imp + "\n" + content)
                 logger.info(f"Fixed NameError: added {imp}")
                 return True
         except Exception as e:
@@ -182,31 +185,31 @@ class AssertionErrorStrategy(FixStrategy):
     def can_fix(self, result: TestResult) -> bool:
         return result.error_type == "AssertionError"
 
-    def apply_fix(self, result: TestResult) -> bool:
-        if result.failure and result.failure.line_number:
-            return self._fix_with_line(result)
-        return self._fix_legacy(result)
+    async def apply_fix(self, result: TestResult) -> bool:
+        if result.failure and result.failure.position:
+            return await self._fix_with_line(result)
+        return await self._fix_legacy(result)
 
-    def _fix_with_line(self, result: TestResult) -> bool:
+    async def _fix_with_line(self, result: TestResult) -> bool:
         failure = result.failure
-        if failure is None or failure.line_number is None:
+        if failure is None or failure.position is None:
             return False
-        target_file = result.target
-        line_no = failure.line_number
+        target_file = str(result.target)
+        line_no = int(failure.position.line)
         msg = failure.message or ""
         try:
             match = self._parse_assertion(msg)
             if not match:
                 return False
             actual, expected = match
-            lines = self.file_system.read_lines(target_file)
+            lines = await self.file_system.read_lines(target_file)
             idx = line_no - 1
             if idx >= len(lines):
                 return False
             line = lines[idx]
             if str(expected) in line:
                 lines[idx] = line.replace(str(expected), str(actual))
-                self.file_system.write_lines(target_file, lines)
+                await self.file_system.write_lines(target_file, lines)
                 logger.info(f"Fixed assertion (literal): {expected} -> {actual}")
                 return True
             assert_var = re.search(r"assert\s+\w+\s*==\s*(\w+)", line)
@@ -224,26 +227,26 @@ class AssertionErrorStrategy(FixStrategy):
                             f"{expected_var} = '{old_val}'",
                             f"{expected_var} = '{new_val}'",
                         )
-                        self.file_system.write_lines(target_file, lines)
+                        await self.file_system.write_lines(target_file, lines)
                         logger.info(f"Fixed assertion (variable): '{old_val}' -> '{new_val}'")
                         return True
         except Exception as e:
             logger.error(f"Failed to fix assertion: {e}", exc_info=True)
         return False
 
-    def _fix_legacy(self, result: TestResult) -> bool:
-        file_path = result.target
+    async def _fix_legacy(self, result: TestResult) -> bool:
+        file_path = str(result.target)
         log = result.output_log
         try:
             match = re.search(r"AssertionError: assert '([^']+)' == '([^']+)'", log)
             if not match:
                 return False
             actual, expected = match.groups()
-            lines = self.file_system.read_lines(file_path)
+            lines = await self.file_system.read_lines(file_path)
             for i, line in enumerate(lines):
                 if f"'{expected}'" in line and "assert" in line:
                     lines[i] = line.replace(f"'{expected}'", f"'{actual}'")
-                    self.file_system.write_lines(file_path, lines)
+                    await self.file_system.write_lines(file_path, lines)
                     logger.info(f"Fixed legacy assertion in {file_path}")
                     return True
         except Exception as e:
@@ -261,3 +264,4 @@ class AssertionErrorStrategy(FixStrategy):
         if match:
             return match.groups()
         return None
+
