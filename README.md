@@ -67,7 +67,7 @@ iwr https://raw.githubusercontent.com/rakaarwaky/agentic-testing/main/install.ps
 
 ### Manual Install
 ```bash
-pip install agentic-testing
+pip install agentic-testing-mcp
 ```
 
 Or with [uv](https://github.com/astral-sh/uv):

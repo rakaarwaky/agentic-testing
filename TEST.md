@@ -22,7 +22,7 @@ pip install -e ".[dev]"
 # Verify CLI availability
 agentic-test version
 ```
-**Success Indicator:** Output displays version `1.1.2` (or the latest version). Exit code 0.
+**Success Indicator:** Output displays version `1.1.3` (or the latest version). Exit code 0.
 
 ### Prepare Test Project
 ```bash
@@ -78,7 +78,7 @@ EOF
 ## CLI Command Testing (Core)
 
 ### 1. `agentic-test version`
-**Success Indicator:** Exit code 0. Output shows `v1.1.2`.
+**Success Indicator:** Exit code 0. Output shows `v1.1.3`.
 
 ### 2. `agentic-test --help`
 **Success Indicator:** Exit code 0. Lists available commands: `run`, `analyze`, `audit`, `generate`, `generate-data`, `migrate`, `find-slow`, `mock-generate`, `workflow`, `version`, `init`, `governance`.

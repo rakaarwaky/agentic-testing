@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 (2026-04-30)
+
+### Changed
+- **Package Name**: Renamed package to `agentic-testing-mcp` to avoid naming conflicts on PyPI.
+
 ## 1.1.2 (2026-04-30)
 
 ### Added
